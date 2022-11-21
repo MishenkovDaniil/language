@@ -1,32 +1,41 @@
 #include <stdio.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "input.h"
 
-const char *s = nullptr;
-
-int GetG (const char *str)
+void skip_spaces (const char **str)
 {
-    s = str;
+    while (isspace (**str))
+    {
+        (*str)++;
+    }
+}
 
-    int value = GetE ();
+int GetG (const char *expr)
+{
+    skip_spaces (&expr);
+    int value = GetE (&expr);
+    skip_spaces (&expr);
 
-    assert (*s == '\0');
+    assert (*expr == '\0');
 
     return value;
 }
 
-int GetE (void)
+int GetE (const char **expr)
 {
-    int value = GetT ();
+    skip_spaces (expr);
+    int value = GetT (expr);
+    skip_spaces (expr);
 
-    while (*s == '+' || *s == '-')
+    while (**expr == '+' || **expr == '-')
     {
-        const char op = *s;
+        const char op = **expr;
 
-        s++;
+        (*expr)++;
 
-        int val_2 = GetT ();
+        int val_2 = GetT (expr);
 
         if (op == '+')
         {
@@ -41,17 +50,19 @@ int GetE (void)
     return value;
 }
 
-int GetT (void)
+int GetT (const char **expr)
 {
-    int value = GetP ();
+    skip_spaces (expr);
+    int value = GetP (expr);
+    skip_spaces (expr);
 
-    while (*s == '*' || *s == '/')
+    while (**expr == '*' || **expr == '/')
     {
-        const char op = *s;
+        const char op = **expr;
 
-        s++;
+        (*expr)++;
 
-        int val_2 = GetP ();
+        int val_2 = GetP (expr);
 
         if (op == '*')
         {
@@ -66,42 +77,48 @@ int GetT (void)
     return value;
 }
 
-int GetP (void)
+int GetP (const char **expr)
 {
+    skip_spaces (expr);
+
     int value = 0;
 
-    if (*s == '(')
+    if (**expr == '(')
     {
-        s++;
+        (*expr)++;
 
-        value = GetE ();
+        value = GetE (expr);
 
-        assert (*s == ')');
+        skip_spaces (expr);
 
-        s++;
+        assert (**expr == ')');
+
+        (*expr)++;
     }
     else
     {
-        value = GetN ();
+        value = GetN (expr);
     }
 
     return value;
 }
 
 
-int GetN (void)
+int GetN (const char **expr)
 {
+    skip_spaces (expr);
+
     int value = 0;
 
-    const char *sOld = s;
+    const char *exprOld = *expr;
 
-    while ('0' <= *s && *s<= '9')
+    while ('0' <= **expr && **expr <= '9')
     {
-        value = value*10 + *s - '0';
-        s++;
+        value = value*10 + **expr - '0';
+        (*expr)++;
     }
 
-    assert (s != sOld);
+    assert (*expr != exprOld);
 
     return value;
 }
