@@ -3,7 +3,8 @@
 #include <stdlib.h>
 
 #include "input.h"
-#include "syntax.h"
+#include "lexems.h"
+#include "tree.h"
 
 #include "../../standart_functions/io/io.h"
 
@@ -36,6 +37,15 @@ int main (int argc, const char **argv)
 
     print_lexems (lexems, tree_file);
 
+    Tree tree = {};
+    unsigned int err =0;
+
+    tree_fill (&tree, lexems);
+    fprintf (stderr, "root->left [%p]\n", tree.root->left);
+    tree_check (&tree, &err);
+
+
+    tree_dtor (&tree);
     free_lexems (lexems);
 
     free (text);
