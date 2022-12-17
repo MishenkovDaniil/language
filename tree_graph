@@ -1,0 +1,20 @@
+digraph
+{
+	node_0 [shape = record, style = "filled", fillcolor = "lightblue", label = "{parent = (nil)} | {DEFS}"];
+	node_1 [shape = record, style = "filled", fillcolor = "lightblue", label = "{node 0x55ef77b448f0 | {parent = (nil)} | {NFUN | sum } | {L 0x55ef77b44920 | R 0x55ef77b44980}} "];
+	node_2 [shape = record, style = "filled", fillcolor = "lightblue", label = "{node 0x55ef77b44920 | {parent = (nil)} | {PAR | a1} | {L (nil) | R 0x55ef77b44950}} "];
+	node_3 [shape = record, style = "filled", fillcolor = "lightblue", label = "{node 0x55ef77b44950 | {parent = (nil)} | {PAR | b_2} | {L (nil) | R (nil)}} "];
+	node_2->node_3;
+	node_1->node_2;
+	node_4 [shape = record, style = "filled", fillcolor = "lightblue", label = "{parent = (nil)} | {SEQ}"];
+	node_5 [shape = record, style = "filled", fillcolor = "lightblue", label = "{parent = (nil)} | {ASS}"];
+	node_6 [shape = record, style = "filled", fillcolor = "lightblue", label = "{node 0x55ef77b449e0 | {parent = (nil)} | {VAR | a1 } | {L (nil) | R (nil)}} "];
+	node_5->node_6;
+	node_7 [shape = record, style = "filled", fillcolor = "lightblue", label = "{node 0x55ef77b44a10 | {parent = (nil)} | {CONST | 5.00} | {L (nil) | R (nil)}} "];
+	node_5->node_7;
+	node_4->node_5;
+	node_8 [shape = record, style = "filled", fillcolor = "lightblue", label = "{parent = (nil)} | {SEQ}"];
+	node_4->node_8;
+	node_1->node_4;
+	node_0->node_1;
+	}
