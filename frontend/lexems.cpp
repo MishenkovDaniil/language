@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "syntax.h"
+#include "lexems.h"
 #include "input.h"
 
 void skip_spaces (char **str)
@@ -19,11 +19,14 @@ Lexem **lexer (char *text, Lexem **lexems)
 {
     int shift = 0;
     char *cur_smbl = text;
+    bool is_needed = true;
 
     int idx = 0 ;
 
     while (*(cur_smbl))
     {
+        is_needed  = true;
+
         if (isspace (*(cur_smbl)))
         {
             skip_spaces (&cur_smbl);
@@ -38,68 +41,76 @@ Lexem **lexer (char *text, Lexem **lexems)
         {
             case '(':
             {
-                lexem->type = STARTING_BRACKET;
+                lexem->type = L_STARTING_BRACKET;
                 break;
             }
             case ')':
             {
-                lexem->type = STARTING_BRACKET;
+                lexem->type = L_CLOSING_BRACKET;
                 break;
             }
             case '{':
             {
-                lexem->type = BLOCK_START;
+                lexem->type = L_BLOCK_START;
                 break;
             }
             case '}':
             {
-                lexem->type = BLOCK_END;
+                lexem->type = L_BLOCK_END;
                 break;
             }
             case '+':
             {
-                lexem->type = OP;
+                lexem->type = L_OP;
                 lexem->value.op_val = ADD;
                 break;
             }
             case '-':
             {
-                lexem->type = OP;
+                lexem->type = L_OP;
                 lexem->value.op_val = SUB;
                 break;
             }
             case '*':
             {
-                lexem->type = OP;
+                lexem->type = L_OP;
                 lexem->value.op_val = MUL;
                 break;
             }
             case '/':
             {
-                lexem->type = OP;
+                lexem->type = L_OP;
                 lexem->value.op_val = DIV;
                 break;
             }
             case '^':
             {
-                lexem->type = OP;
+                lexem->type = L_OP;
                 lexem->value.op_val = DEG;
                 break;
             }
             case ';':
             {
-                lexem->type = SEQ;
+                lexem->type = L_SEQ;
                 break;
             }
             case '=':
             {
-                lexem->type = OP;
-                lexem->value.op_val = ASS;
+                if (lexems[idx - 1]->type == L_VAR)
+                {
+                    lexem->type = L_ASS;
+                }
+                else if (lexems[idx-1]->type == L_NVAR)
+                {
+                    is_needed = false;
+                }
+
                 break;
             }
             case ',':
             {
-                lexem->type = SEP;
+                is_needed = false;
+                //lexem->type = L_SEP;
                 break;
             }
             default:
@@ -119,7 +130,7 @@ Lexem **lexer (char *text, Lexem **lexems)
             char *end = nullptr;
             double val = strtod (cur_smbl, &end);
 
-            lexem->type = NUM;
+            lexem->type = L_NUM;
             lexem->value.dbl_val = val;
 
             cur_smbl = end;
@@ -127,17 +138,17 @@ Lexem **lexer (char *text, Lexem **lexems)
         else if (strstr (cur_smbl, "if") == cur_smbl)
         {
             cur_smbl += strlen ("if");
-            lexem->type = IF;
+            lexem->type = L_IF;
         }
         else if (strstr (cur_smbl, "while") == cur_smbl)
         {
             cur_smbl += strlen ("while");
-            lexem->type = WHILE;
+            lexem->type = L_WHILE;
         }
         else if (strstr (cur_smbl, "return") == cur_smbl)
         {
             cur_smbl += strlen ("return");
-            lexem->type = RET;
+            lexem->type = L_RET;
         }
         else if (strstr (cur_smbl, "NVAR") == cur_smbl)
         {
@@ -157,7 +168,7 @@ Lexem **lexer (char *text, Lexem **lexems)
             sscanf (cur_smbl, "%[a-z A-Z _ 1-9]%n", var, &num);
             cur_smbl += num;
 
-            lexem->type = NVAR;
+            lexem->type = L_NVAR;
             lexem->value.var = (char *)calloc (strlen(var) + 1, sizeof (char));
             strcpy (lexem->value.var, var);
         }
@@ -179,15 +190,15 @@ Lexem **lexer (char *text, Lexem **lexems)
             sscanf (cur_smbl, "%[a-z A-Z _ 1-9]%n", var, &num);
             cur_smbl += num;
 
-            lexem->type = DEF;
+            lexem->type = L_NFUN;
             lexem->value.var = (char *)calloc (strlen(var) + 1, sizeof (char));
             strcpy (lexem->value.var, var);
-        }
+        }/*
         else if (strstr (cur_smbl, "DEF") == cur_smbl)
         {
             cur_smbl += strlen ("DEF");
-            lexem->type = DEF;
-        }
+            lexem->type = L_DEF;
+        }*/
         else if (isalpha (*cur_smbl))
         {
             char var[10] = "";
@@ -196,7 +207,7 @@ Lexem **lexer (char *text, Lexem **lexems)
             sscanf (cur_smbl, "%[a-z A-Z _ 1-9]%n", var, &num);
             cur_smbl += num;
 
-            lexem->type = VAR;
+            lexem->type = L_VAR;
             lexem->value.var = (char *)calloc (strlen(var) + 1, sizeof (char));
             strcpy (lexem->value.var, var);
         }
@@ -206,8 +217,12 @@ Lexem **lexer (char *text, Lexem **lexems)
             return nullptr;
         }
 
-        lexems[idx++] = lexem;
-        fprintf (stderr, "[%d]\n", lexems[idx-1]->type);
+        if (is_needed)
+        {
+            lexems[idx++] = lexem;
+
+            fprintf (stderr, "[%d]\n", lexems[idx-1]->type);
+        }
     }
 
     return lexems;
@@ -219,94 +234,99 @@ void print_lexems (Lexem **lexems, FILE *output_file)
     {
         switch (lexems[i]->type)
         {
-            case DEFAULT:
+            case L_DEFAULT:
             {
                 fprintf (output_file, "[DEFAULT]\n");
                 break;
             }
-            case NUM:
+            case L_NUM:
             {
                 fprintf (output_file, "[NUM]\n");
                 break;
             }
-            case VAR:
+            case L_VAR:
             {
                 fprintf (output_file, "[VAR, %s]\n", lexems[i]->value.var);
                 break;
             }
-            case OP:
+            case L_OP:
             {
                 fprintf (output_file, "[OP, %d]\n", lexems[i]->value.op_val);
                 break;
             }
-            case CALL:
+            case L_CALL:
             {
                 fprintf (output_file, "[CALL]\n");
                 break;
             }
-            case IF:
+            case L_IF:
             {
                 fprintf (output_file, "[IF]\n");
                 break;
             }
-            case WHILE:
+            case L_WHILE:
             {
                 fprintf (output_file, "[WHILE]\n");
                 break;
             }
-            case DEF:
+            case L_NFUN:
             {
-                fprintf (output_file, "[DEF]\n");
+                fprintf (output_file, "[NFUN]\n");
                 break;
             }
-            case NVAR:
+            case L_NVAR:
             {
                 fprintf (output_file, "[NVAR, %s]\n", lexems[i]->value.var);
                 break;
             }
-            case SEP:
+            case L_SEP:
             {
                 fprintf (output_file, "[SEP]\n");
                 break;
             }
-            case PAR:
+            case L_PAR:
             {
                 fprintf (output_file, "[PAR, %s]\n", lexems[i]->value.var);
                 break;
             }
-            case SEQ:
+            case L_SEQ:
             {
                 fprintf (output_file, "[SEQ]\n");
                 break;
             }
-            case BLOCK_START:
+            case L_BLOCK_START:
             {
                 fprintf (output_file, "[BLOCK_START]\n");
                 break;
             }
-            case BLOCK_END:
+            case L_BLOCK_END:
             {
                 fprintf (output_file, "[BLOCK_END]\n");
                 break;
             }
-            case STARTING_BRACKET:
+            case L_STARTING_BRACKET:
             {
                 fprintf (output_file, "[STARTING_BRACKET]\n");
                 break;
             }
-            case CLOSING_BRACKET:
+            case L_CLOSING_BRACKET:
             {
                 fprintf (output_file, "[CLOSING_BRACKET]\n");
                 break;
             }
-            case RET:
+            case L_RET:
             {
                 fprintf (output_file, "[RET]\n");
                 break;
             }
+            case L_ASS:
+            {
+                fprintf (output_file, "[ASS]\n");
+                break;
+            }
             default:
             {
-                debug_print ("Error: wrong command.\n");
+                debug_print ("Error: wrong command %d.\n", lexems[i]->type);
                 break;
             }
         }
@@ -317,6 +337,11 @@ void free_lexems (Lexem **lexems)
 {
     for (int i = 0; lexems[i] != nullptr; i++)
     {
+        /*if (lexems[i]->type == L_VAR)
+        {
+            free (lexems[i]->value.var);
+        }*/
+
         free (lexems[i]);
     }
 }
