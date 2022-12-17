@@ -1,0 +1,586 @@
+/*
+    Grammar  ::= Defs
+    Defs     ::= (Nvar | Nfun) Defs*
+
+    Nvar     ::= Name Expr
+    Nfun     ::= Name Par* Block
+    Par      ::= Name
+
+    Block    ::= Seq
+    Seq      ::= (Block | Nvar | Ass | If | While | Call | Ret) Seq*
+    Ass      ::= Var Expr
+    If       ::= "if"     '(' Expr ')'
+    While    ::= "while"  '(' Expr ')'
+    Call     ::= Name Arg
+    Arg      ::= Const Arg*
+    Ret      ::= Expr
+
+    Op       ::= '+' | '-' | '*' | '/' | '^'
+    Expr     ::= T (['+' | '-'] T)*
+    T        ::= Deg (['*' | '/'] Deg)*
+    Deg      ::= Primary ('^' Primary)*
+    Primary  ::= '('Expr')' | Var | Const | Call
+    Name     ::= ['a'-'z','0'-'9','_']+                    ///not initialized before
+    Var      ::= ['a'-'z', '_'] ['a'-'z','0'-'9','_']+     ///already initialized
+    Const    ::= ['0'-'9']+
+*/
+
+#include <stdio.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+#include "lexems.h"
+#include "tree.h"
+#include "input.h"
+#include "op_types.h"
+
+#define create_num(num)                 tree_create_node (TYPE_NUM, #num)
+#define Left                            node->left
+#define Right                           node->right
+#define cL                              cpy_node (Left)
+#define cR                              cpy_node (Right)
+#define ADD(left_node, right_node)      tree_create_node (OP, "ADD", left_node, right_node)
+#define SUB(left_node, right_node)      tree_create_node (OP, "SUB", left_node, right_node)
+#define MUL(left_node, right_node)      tree_create_node (OP, "MUL", left_node, right_node)
+#define DIV(left_node, right_node)      tree_create_node (OP, "DIV", left_node, right_node)
+#define DEG(left_node, right_node)      tree_create_node (OP, "DEG", left_node, right_node)
+
+//#define SIN(node)                       tree_create_node (OP, "SIN", nullptr, node)
+//#define COS(node)                       tree_create_node (OP, "COS", nullptr, node)
+
+Node *tree_fill (Tree *tree, Lexem **lexems)
+{
+    GetNodeG (tree, lexems);
+
+    if (!(tree->root))
+    {
+        debug_print ("Error: failed to read from input file");
+    }
+
+    return tree->root;
+}
+
+Node *GetNodeG (Tree *tree, Lexem **lexems)
+{
+    int index = 0;
+    tree->root = GetNodeDefs (lexems, &index);
+
+    fprintf (stderr, "2");
+    fprintf (stderr, "%p\n", lexems[index]);
+
+    //fprintf (stderr, "%d\n", lexems[index]->type);
+
+    if (!(lexems[index] == nullptr))
+    {
+        debug_print ("Error: last symbol to read is not '\\0' (expr is  now)");
+        return nullptr;
+    }/*
+    if (lexems[index]->type != L_SEQ)
+    {
+        debug_print ("Error: last symbol to read is not '\\0' (expr is  now)");
+        return nullptr;
+    }
+*/
+    //unsigned int err = 0;
+    //tree_check (tree, &err);
+
+    return tree->root;
+}
+
+Node *GetNodeDefs (Lexem **lexems, int *index)
+{
+    Node *result = (Node *)calloc (1, sizeof (Node));
+    result->type = DEFS;
+
+    if (lexems[*index] == nullptr)
+    {
+        return nullptr;
+    }
+    else if (lexems[*index]->type == L_DEFAULT)
+    {
+        return nullptr;
+    }
+    else if (lexems[*index]->type == L_NFUN || lexems[*index]->type == L_NVAR)
+    {
+        fprintf (stderr, "1");
+        if (lexems[*index]->type == L_NVAR)
+        {
+            result->left = GetNodeNvar (lexems, index);
+        }
+        else
+        {
+            result->left = GetNodeNfun (lexems, index);
+        }
+
+        result->right = GetNodeDefs (lexems, index);
+    }
+    else
+    {
+        return nullptr;
+    }
+
+    return result;
+}
+
+Node *GetNodeNfun (Lexem **lexems, int *index)
+{
+    Node *result = (Node *)calloc (1, sizeof (Node));
+
+    result->type = NFUN;
+    result->value.var = lexems[*index]->value.var;
+
+    (*index)++;
+
+    if (lexems[*index]->type == L_STARTING_BRACKET)
+    {
+        (*index)++;
+
+        result->left = GetNodePar (lexems, index);
+        //printf ("result left %d\n", result->left->right->type);
+        if (lexems[*index]->type != L_CLOSING_BRACKET)
+        {
+            debug_print ("Syntax error: no closing bracket in args of func %s.\n", result->value.var);
+            return nullptr;
+        }
+
+        (*index)++;
+    }
+
+    if (lexems[*index]->type != L_BLOCK_START)
+    {
+        debug_print ("Syntax error: no '{' after function defining.\n");
+        return nullptr;
+    }
+
+    (*index)++;
+
+    result->right = GetNodeBlock (lexems, index);
+    //printf ("block %p\n", result->right);
+    return result;
+}
+
+Node *GetNodePar (Lexem **lexems, int *index)
+{
+    Node *result = nullptr;
+
+    if (lexems[*index]->type == L_VAR)
+    {
+        result = (Node *)calloc (1, sizeof (Node));
+        result->type = PAR;
+        result->value.var = lexems[*index]->value.var;
+
+        (*index)++;
+
+        result->right = GetNodePar (lexems, index);
+    }
+
+    return result;
+}
+
+Node *GetNodeBlock (Lexem **lexems, int *index)
+{
+    Node *result = GetNodeSeq (lexems, index);
+
+    //fprintf (stderr, "ffff %p\n", lexems[*index]);
+    if (lexems[*index]->type != L_BLOCK_END)
+    {
+        debug_print ("no closing '}'.\n");
+
+        return nullptr;
+    }
+
+    (*index)++;
+
+    return result;
+}
+
+Node *GetNodeSeq (Lexem **lexems, int *index)
+{
+    //printf ("Pupupu\n");
+    Node *result = (Node *)calloc (1, sizeof (Node));
+    result->type = SEQ;
+    //fprintf (stderr, "type is %d\n", lexems[*index]->type);
+
+    switch (lexems[*index]->type)
+    {
+        case L_BLOCK_START:
+        {
+            (*index)++;
+            result->left = GetNodeBlock (lexems, index);
+
+            break;
+        }
+        case L_NVAR:
+        {
+            result->left = GetNodeNvar (lexems, index);
+
+            break;
+        }
+        case L_VAR:
+        {
+            //fprintf (stderr, "vfssgbsdgfdcv\n");
+            result->left = GetNodeAss (lexems, index);
+            break;
+        }
+        case L_IF:
+        {
+            result->left = GetNodeIf (lexems, index);
+            break;
+        }
+        case L_WHILE:
+        {
+            result->left = GetNodeWhile (lexems, index);
+            break;
+        }
+        case L_RET:
+        {
+            result->left = GetNodeRet (lexems, index);
+            break;
+        }
+        case L_CALL:
+        {
+            result->left = GetNodeCall (lexems, index);
+            break;
+        }
+        default:
+        {
+           // printf ("oioioi\n");
+            result->left = nullptr;
+            break;
+        }
+    }
+
+    if (result->left && lexems[*index] && lexems[*index]->type == L_SEQ)
+    {
+        (*index)++;
+        //printf ("pupupu\n");
+        result->right = GetNodeSeq (lexems, index);
+    }
+
+    return result;
+}
+
+Node *GetNodeNvar (Lexem **lexems, int *index)
+{
+    Node *result = (Node *)calloc (1, sizeof (Node));
+    result->type = NVAR;
+    result->value.var = lexems[*index]->value.var;
+
+    (*index)++;
+
+    result->right = GetNodeE(lexems, index);
+
+    return result;
+}
+
+Node *GetNodeAss (Lexem **lexems, int *index)
+{
+    //fprintf (stderr, "10\n\n");
+    Node *result = (Node *)calloc (1, sizeof (Node));
+
+    result->type = ASS;
+
+    result->left = GetNodeV (lexems, index);
+    (*index)++;
+
+    //fprintf (stderr, "lexems[*index]->type %d\n ",lexems[*index]->type);
+
+    result->right = GetNodeE (lexems, index);
+
+    return result;
+}
+
+Node *GetNodeRet (Lexem **lexems, int *index)
+{
+    Node *result = (Node *)calloc (1, sizeof (Node));
+    result->type = RET;
+
+    (*index)++;
+
+    result->right = GetNodeE (lexems, index);
+
+    return result;
+}
+
+Node *GetNodeCall (Lexem **lexems, int *index)
+{
+    Node *result = (Node *)calloc (1, sizeof (Node));
+    result->type = CALL;
+
+    result->value.var = lexems[*index]->value.var;
+
+    (*index)++;
+
+    if (lexems[*index]->type == L_STARTING_BRACKET)
+    {
+        (*index)++;
+
+        result->left = GetNodeArg (lexems, index);
+
+        if (lexems[*index]->type != L_CLOSING_BRACKET)
+        {
+            debug_print ("Syntax error: no closing bracket in args of func %s.\n", result->value.var);
+            return nullptr;
+        }
+
+        (*index)++;
+    }
+
+    return result;
+}
+Node *GetNodeArg (Lexem **lexems, int *index)
+{
+    Node *result = nullptr;
+
+    if (lexems[*index]->type == L_VAR)
+    {
+        result = (Node *)calloc (1, sizeof (Node));
+        result->type = ARG;
+        result->value.var = lexems[*index]->value.var;
+
+        (*index)++;
+
+        result->right = GetNodeArg (lexems, index);
+    }
+
+    return result;
+}
+Node *GetNodeIf (Lexem **lexems, int *index)
+{
+    return nullptr;
+}
+Node *GetNodeWhile (Lexem **lexems, int *index)
+{
+    return nullptr;
+}
+
+Node *GetNodeE (Lexem **lexems, int *index)
+{
+    Node *result = GetNodeT (lexems, index);
+    Node *right_node = nullptr;
+
+    while (lexems[*index]->type == L_OP &&
+          (lexems[*index]->value.op_val == ADD ||
+           lexems[*index]->value.op_val == SUB))
+    {
+        Op_types op = lexems[*index]->value.op_val;
+
+        (*index)++;
+
+        right_node = GetNodeT (lexems, index);
+
+        if (op == ADD)
+        {
+            result = ADD (result, right_node);
+        }
+        else
+        {
+            result = SUB (result, right_node);
+        }
+    }
+
+    return result;
+}
+
+Node *GetNodeT (Lexem **lexems, int *index)
+{
+    Node *result = GetNodeD (lexems, index);
+    Node *right_node = nullptr;
+
+    while (lexems[*index]->type == L_OP &&
+          (lexems[*index]->value.op_val == MUL ||
+           lexems[*index]->value.op_val == DIV))
+    {
+        Op_types op = lexems[*index]->value.op_val;
+
+        (*index)++;
+
+        right_node = GetNodeD (lexems, index);
+
+        if (op == MUL)
+        {
+            result = MUL (result, right_node);
+        }
+        else
+        {
+            result = DIV (result, right_node);
+        }
+    }
+
+    return result;
+}
+
+Node *GetNodeD (Lexem **lexems, int *index)
+{
+    Node *result = GetNodeP (lexems, index);
+    Node *right_node = nullptr;
+
+    while (lexems[*index]->type == L_OP &&
+           lexems[*index]->value.op_val == DEG)
+    {
+        (*index)++;
+
+        right_node = GetNodeP (lexems, index);
+
+        result = DEG (result, right_node);
+    }
+
+    return result;
+}
+
+Node *GetNodeP (Lexem **lexems, int *index)
+{
+    Node *result = nullptr;
+
+    if (lexems[*index]->type == L_STARTING_BRACKET)
+    {
+        (*index)++;
+
+        result = GetNodeE (lexems, index);
+
+        if (!(lexems[*index]->type == L_CLOSING_BRACKET))
+        {
+            debug_print ("Error: no closing bracket (after opening one) (expr is  now)");
+            return nullptr;
+        }
+
+        (*index)++;
+    }
+    else if (lexems[*index]->type == L_CALL)
+    {
+        result = GetNodeCall (lexems, index);
+    }
+    else if (!(result = GetNodeV (lexems, index)))
+    {
+        result = GetNodeN (lexems, index);
+    }
+
+    if (!(result))
+    {
+        debug_print ("Syntax error: no matching lexem.\n");
+        return nullptr;
+    }
+
+    return result;
+}
+
+Node *GetNodeN (Lexem **lexems, int *index)
+{
+    if (lexems[*index]->type == L_NUM)
+    {
+        Node *result = (Node *)calloc (1, sizeof(Node));
+
+        result->type = CONST;
+        result->value.dbl_val = lexems[*index]->value.dbl_val;
+
+        (*index)++;
+
+        return result;
+    }
+    else
+    {
+        debug_print ("Error:not num in GetNum function");
+    }
+
+    return nullptr;
+
+    /*double value = 0;
+
+    const char *old_expr = *expr;
+
+    char *new_expr = nullptr;
+
+    value = strtod (*expr, &new_expr);
+
+    *expr = new_expr;
+
+    Node *result = create_num (value);
+
+    result->value.dbl_val = value;
+
+    if (!(*expr != old_expr))
+    {
+        debug_print ("Error: syntax error (expr is {%s} now)", *expr);
+        return nullptr;
+    }
+
+    return result;
+*/
+}
+
+Node *GetNodeV (Lexem **lexems, int *index)
+{
+    if (lexems[*index]->type == L_VAR)
+    {
+        Node *result = (Node *)calloc (1, sizeof(Node));
+
+        result->type = VAR;
+        result->value.var = lexems[*index]->value.var;
+
+        (*index)++;
+
+        return result;
+    }
+
+    return nullptr;
+    /*
+    Node *left_node = nullptr;
+
+    char var[4] = "";
+
+    int var_len = 0;
+
+    while (isalpha (**expr))
+    {
+        *(var + var_len) = **expr;
+
+        var_len++;
+        (*expr)++;
+    }
+
+    if (var_len)//and var != log ln cos sin tg arctg arcsin arccos arcctg ctg e pi
+    {
+        if (var_len > 3)
+        {
+            printf ("Error: max var len is 3");
+            return nullptr;
+        }
+        else if (strcasecmp (var, "sin") == 0)
+        {
+            left_node = GetNodeP (expr);
+
+            result = SIN (left_node);
+        }
+        else if (strcasecmp (var, "cos") == 0)
+        {
+            left_node = GetNodeP (expr);
+
+            result = COS (left_node);
+        }
+        else
+        {
+            result = tree_create_node (TYPE_VAR, var);
+        }
+    }
+
+    return result;*/
+}
+
+#undef create_num
+#undef Left
+#undef Right
+#undef dL
+#undef dR
+#undef cL
+#undef cR
+#undef ADD
+#undef SUB
+#undef MUL
+#undef DIV
+#undef DEG
+#undef SIN
+#undef COS
+#undef debug_print
+#undef tex_print
