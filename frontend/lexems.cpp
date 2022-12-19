@@ -145,6 +145,28 @@ Lexem **lexer (char *text, Lexem **lexems)
             cur_smbl += strlen ("while");
             lexem->type = L_WHILE;
         }
+        else if (strstr (cur_smbl, "CALL") == cur_smbl)
+        {
+            cur_smbl += strlen ("call");
+
+            skip_spaces (&cur_smbl);
+
+            if (!(isalpha (*(cur_smbl))))
+            {
+                debug_print ("wrong variable name, %s", cur_smbl);
+                return nullptr;
+            }
+
+            char var[10] = "";
+            int num = 0;
+
+            sscanf (cur_smbl, "%[a-z A-Z _ 1-9]%n", var, &num);
+            cur_smbl += num;
+
+            lexem->type = L_CALL;
+            lexem->value.var = (char *)calloc (strlen(var) + 1, sizeof (char));
+            strcpy (lexem->value.var, var);
+        }
         else if (strstr (cur_smbl, "return") == cur_smbl)
         {
             cur_smbl += strlen ("return");
@@ -241,7 +263,7 @@ void print_lexems (Lexem **lexems, FILE *output_file)
             }
             case L_NUM:
             {
-                fprintf (output_file, "[NUM]\n");
+                fprintf (output_file, "[NUM, %.2lf]\n", lexems[i]->value.dbl_val);
                 break;
             }
             case L_VAR:
@@ -256,7 +278,7 @@ void print_lexems (Lexem **lexems, FILE *output_file)
             }
             case L_CALL:
             {
-                fprintf (output_file, "[CALL]\n");
+                fprintf (output_file, "[CALL, %s]\n", lexems[i]->value.var);
                 break;
             }
             case L_IF:
@@ -271,7 +293,7 @@ void print_lexems (Lexem **lexems, FILE *output_file)
             }
             case L_NFUN:
             {
-                fprintf (output_file, "[NFUN]\n");
+                fprintf (output_file, "[NFUN, %s]\n", lexems[i]->value.var);
                 break;
             }
             case L_NVAR:
