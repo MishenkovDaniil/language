@@ -94,13 +94,17 @@ Node *GetNodeDefs (Lexem **lexems, int *index)
     {
         return nullptr;
     }
+
     if (lexems[*index]->type == L_SEQ)
     {
         (*index)++;
+        result = GetNodeDefs (lexems, index);
     }
-
-    if (lexems[*index]->type == L_NFUN || lexems[*index]->type == L_NVAR)
+    else if (lexems[*index]->type == L_NFUN || lexems[*index]->type == L_NVAR)
     {
+        result = (Node *)calloc (1, sizeof (Node));
+        result->type = DEFS;
+
         if (lexems[*index]->type == L_NVAR)
         {
             result->left = GetNodeNvar (lexems, index);
@@ -111,10 +115,6 @@ Node *GetNodeDefs (Lexem **lexems, int *index)
         }
 
         result->right = GetNodeDefs (lexems, index);
-    }
-    else
-    {
-        return nullptr;
     }
 
     return result;
@@ -301,7 +301,7 @@ Node *GetNodeCall (Lexem **lexems, int *index)
     {
         (*index)++;
 
-        result->left = GetNodeArg (lexems, index);
+        result->right = GetNodeArg (lexems, index);
 
         if (lexems[*index]->type != L_CLOSING_BRACKET)
         {
