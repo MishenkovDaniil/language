@@ -5,19 +5,21 @@
 #include "input.h"
 #include "lexems.h"
 #include "tree.h"
+#include "tree_output.h"
 
-#include "../../standart_functions/io/io.h"
+#include "../../../standart_functions/io/io.h"
 
 int main (int argc, const char **argv)
 {
-    if (argc != 3)
+    if (argc != 4)
     {
         fprintf (stderr, "Error: too few arguments.\n");
         return 0;
     }
 
-    FILE *exe_file = fopen (argv[1], "r");
+    FILE *exe_file  = fopen (argv[1], "r");
     FILE *tree_file = fopen (argv[2], "w");
+    FILE *asm_file  = fopen (argv[3], "w");
 
     assert (exe_file);
     assert (tree_file);
@@ -44,6 +46,7 @@ int main (int argc, const char **argv)
     fprintf (stderr, "root->left [%p]\n", tree.root->left);
     tree_check (&tree, &err);
 
+    print_tree (&tree, asm_file);
 
     tree_dtor (&tree);
     free_lexems (lexems);
