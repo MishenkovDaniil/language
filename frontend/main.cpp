@@ -5,9 +5,10 @@
 #include "input.h"
 #include "lexems.h"
 #include "tree.h"
-#include "tree_output.h"
+#include "output.h"
+#include "stack.h"
 
-#include "../../../standart_functions/io/io.h"
+#include "../../standart_functions/io/io.h"
 
 int main (int argc, const char **argv)
 {
@@ -33,23 +34,25 @@ int main (int argc, const char **argv)
 
     n_lines = read_in_buf (exe_file, text, &n_lines, txt_size, verbose);
 
-    Lexem *lexems[100] = {};
+    Stack lexems = {};
+    stack_init (&lexems, 100);
+    //Lexem *lexems[100] = {};
 
-    lexer (text, lexems);
+    lexer (text, &lexems);
 
-    print_lexems (lexems, tree_file);
+    print_lexems (&lexems, tree_file);
 
     Tree tree = {};
     unsigned int err =0;
 
-    tree_fill (&tree, lexems);
-    fprintf (stderr, "root->left [%p]\n", tree.root->left);
-    tree_check (&tree, &err);
+    //tree_fill (&tree, lexems);
+    //fprintf (stderr, "root->left [%p]\n", tree.root->left);
+    //tree_check (&tree, &err);
 
-    print_tree (&tree, asm_file);
+    //print_tree (&tree, asm_file);
 
-    tree_dtor (&tree);
-    free_lexems (lexems);
-
+    //tree_dtor (&tree);
+    //free_lexems (lexems);
+    stack_dtor (&lexems);
     free (text);
 }

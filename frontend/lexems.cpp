@@ -6,6 +6,7 @@
 
 #include "lexems.h"
 #include "input.h"
+#include "stack.h"
 
 void skip_spaces (char **str)
 {
@@ -15,7 +16,7 @@ void skip_spaces (char **str)
     }
 }
 
-Lexem **lexer (char *text, Lexem **lexems)
+Lexem **lexer (char *text, Stack *lexems)
 {
     int shift = 0;
     char *cur_smbl = text;
@@ -96,14 +97,28 @@ Lexem **lexer (char *text, Lexem **lexems)
             }
             case '=':
             {
-                if (lexems[idx - 1]->type == L_VAR)
+                if (lexems->size > 0) //lexems[idx - 1]->type == L_VAR)
                 {
-                    lexem->type = L_ASS;
+                    Lexem *pop_lexem = (Lexem *)stack_pop (lexems);
+                    if (pop_lexem->type == L_VAR)
+                    {
+                        stack_push (lexems, pop_lexem);
+                        lexem->type = L_ASS;
+                    }
+                    else if (pop_lexem->type == L_NVAR)
+                    {
+                        stack_push (lexems, pop_lexem);
+                        is_needed = false;
+                    }
                 }
-                else if (lexems[idx-1]->type == L_NVAR)
+                else
+                {
+                    fprintf (stderr, "Error: '=' not after variable value.\n");
+                }
+                /* if (lexems[idx-1]->type == L_NVAR)
                 {
                     is_needed = false;
-                }
+                }*/
 
                 break;
             }
@@ -241,118 +256,125 @@ Lexem **lexer (char *text, Lexem **lexems)
 
         if (is_needed)
         {
-            lexems[idx++] = lexem;
-
-            fprintf (stderr, "[%d]\n", lexems[idx-1]->type);
+            stack_push (lexems, lexem);
+            stack_push (lexems, lexem);
+            fprintf (stderr, "[%d]\n", ((Lexem *)stack_pop(lexems))->type);
         }
     }
 
-    return lexems;
+    return nullptr;
 }
 
-void print_lexems (Lexem **lexems, FILE *output_file)
+void print_lexems (Stack *lexems, FILE *output_file)
 {
-    for (int i = 0; lexems[i] != nullptr; i++)
+    if (!(lexems->size))
     {
-        switch (lexems[i]->type)
+        return;
+    }
+
+    Lexem *pop_lexem = (Lexem *)stack_pop (lexems);
+    print_lexems (lexems, output_file);
+    stack_push (lexems, pop_lexem);
+
+    switch (pop_lexem->type)
+    {
+        case L_DEFAULT:
         {
-            case L_DEFAULT:
-            {
-                fprintf (output_file, "[DEFAULT]\n");
-                break;
-            }
-            case L_NUM:
-            {
-                fprintf (output_file, "[NUM, %.2lf]\n", lexems[i]->value.dbl_val);
-                break;
-            }
-            case L_VAR:
-            {
-                fprintf (output_file, "[VAR, %s]\n", lexems[i]->value.var);
-                break;
-            }
-            case L_OP:
-            {
-                fprintf (output_file, "[OP, %d]\n", lexems[i]->value.op_val);
-                break;
-            }
-            case L_CALL:
-            {
-                fprintf (output_file, "[CALL, %s]\n", lexems[i]->value.var);
-                break;
-            }
-            case L_IF:
-            {
-                fprintf (output_file, "[IF]\n");
-                break;
-            }
-            case L_WHILE:
-            {
-                fprintf (output_file, "[WHILE]\n");
-                break;
-            }
-            case L_NFUN:
-            {
-                fprintf (output_file, "[NFUN, %s]\n", lexems[i]->value.var);
-                break;
-            }
-            case L_NVAR:
-            {
-                fprintf (output_file, "[NVAR, %s]\n", lexems[i]->value.var);
-                break;
-            }
-            case L_SEP:
-            {
-                fprintf (output_file, "[SEP]\n");
-                break;
-            }
-            case L_PAR:
-            {
-                fprintf (output_file, "[PAR, %s]\n", lexems[i]->value.var);
-                break;
-            }
-            case L_SEQ:
-            {
-                fprintf (output_file, "[SEQ]\n");
-                break;
-            }
-            case L_BLOCK_START:
-            {
-                fprintf (output_file, "[BLOCK_START]\n");
-                break;
-            }
-            case L_BLOCK_END:
-            {
-                fprintf (output_file, "[BLOCK_END]\n");
-                break;
-            }
-            case L_STARTING_BRACKET:
-            {
-                fprintf (output_file, "[STARTING_BRACKET]\n");
-                break;
-            }
-            case L_CLOSING_BRACKET:
-            {
-                fprintf (output_file, "[CLOSING_BRACKET]\n");
-                break;
-            }
-            case L_RET:
-            {
-                fprintf (output_file, "[RET]\n");
-                break;
-            }
-            case L_ASS:
-            {
-                fprintf (output_file, "[ASS]\n");
-                break;
-            }
-            default:
-            {
-                debug_print ("Error: wrong command %d.\n", lexems[i]->type);
-                break;
-            }
+            fprintf (output_file, "[DEFAULT]\n");
+            break;
+        }
+        case L_NUM:
+        {
+            fprintf (output_file, "[NUM, %.2lf]\n", pop_lexem->value.dbl_val);
+            break;
+        }
+        case L_VAR:
+        {
+            fprintf (output_file, "[VAR, %s]\n", pop_lexem->value.var);
+            break;
+        }
+        case L_OP:
+        {
+            fprintf (output_file, "[OP, %d]\n", pop_lexem->value.op_val);
+            break;
+        }
+        case L_CALL:
+        {
+            fprintf (output_file, "[CALL, %s]\n", pop_lexem->value.var);
+            break;
+        }
+        case L_IF:
+        {
+            fprintf (output_file, "[IF]\n");
+            break;
+        }
+        case L_WHILE:
+        {
+            fprintf (output_file, "[WHILE]\n");
+            break;
+        }
+        case L_NFUN:
+        {
+            fprintf (output_file, "[NFUN, %s]\n", pop_lexem->value.var);
+            break;
+        }
+        case L_NVAR:
+        {
+            fprintf (output_file, "[NVAR, %s]\n", pop_lexem->value.var);
+            break;
+        }
+        case L_SEP:
+        {
+            fprintf (output_file, "[SEP]\n");
+            break;
+        }
+        case L_PAR:
+        {
+            fprintf (output_file, "[PAR, %s]\n", pop_lexem->value.var);
+            break;
+        }
+        case L_SEQ:
+        {
+            fprintf (output_file, "[SEQ]\n");
+            break;
+        }
+        case L_BLOCK_START:
+        {
+            fprintf (output_file, "[BLOCK_START]\n");
+            break;
+        }
+        case L_BLOCK_END:
+        {
+            fprintf (output_file, "[BLOCK_END]\n");
+            break;
+        }
+        case L_STARTING_BRACKET:
+        {
+            fprintf (output_file, "[STARTING_BRACKET]\n");
+            break;
+        }
+        case L_CLOSING_BRACKET:
+        {
+            fprintf (output_file, "[CLOSING_BRACKET]\n");
+            break;
+        }
+        case L_RET:
+        {
+            fprintf (output_file, "[RET]\n");
+            break;
+        }
+        case L_ASS:
+        {
+            fprintf (output_file, "[ASS]\n");
+            break;
+        }
+        default:
+        {
+            debug_print ("Error: wrong command %d.\n", pop_lexem->type);
+            break;
         }
     }
+    fflush (output_file);
 }
 
 void free_lexems (Lexem **lexems)
