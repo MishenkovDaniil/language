@@ -1,6 +1,4 @@
-#README
-
-##TO DO:
+#TO DO:
 
 - make comments in asm file
 -
