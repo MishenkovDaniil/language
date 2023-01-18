@@ -175,7 +175,7 @@ Lexem **lexer (char *text, Stack *lexems)
             char var[10] = "";
             int num = 0;
 
-            sscanf (cur_smbl, "%[a-z A-Z _ 1-9]%n", var, &num);
+            sscanf (cur_smbl, " %[a-zA-Z_1-9]%n", var, &num);
             cur_smbl += num;
 
             lexem->type = L_CALL;
@@ -202,7 +202,7 @@ Lexem **lexer (char *text, Stack *lexems)
             char var[10] = "";
             int num = 0;
 
-            sscanf (cur_smbl, "%[a-z A-Z _ 1-9]%n", var, &num);
+            sscanf (cur_smbl, " %[a-zA-Z_1-9]%n", var, &num);
             cur_smbl += num;
 
             lexem->type = L_NVAR;
@@ -224,7 +224,7 @@ Lexem **lexer (char *text, Stack *lexems)
             char var[10] = "";
             int num = 0;
 
-            sscanf (cur_smbl, "%[a-z A-Z _ 1-9]%n", var, &num);
+            sscanf (cur_smbl, " %[a-zA-Z_1-9]%n", var, &num);
             cur_smbl += num;
 
             lexem->type = L_NFUN;
@@ -241,7 +241,7 @@ Lexem **lexer (char *text, Stack *lexems)
             char var[10] = "";
             int num = 0;
 
-            sscanf (cur_smbl, "%[a-z A-Z _ 1-9]%n", var, &num);
+            sscanf (cur_smbl, " %[a-zA-Z_1-9]%n", var, &num);
             cur_smbl += num;
 
             lexem->type = L_VAR;
@@ -375,17 +375,4 @@ void print_lexems (Stack *lexems, FILE *output_file)
         }
     }
     fflush (output_file);
-}
-
-void free_lexems (Lexem **lexems)
-{
-    for (int i = 0; lexems[i] != nullptr; i++)
-    {
-        /*if (lexems[i]->type == L_VAR)
-        {
-            free (lexems[i]->value.var);
-        }*/
-
-        free (lexems[i]);
-    }
 }
