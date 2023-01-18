@@ -56,7 +56,7 @@ bool is_my_var (const char *var, int index)
 
 void print_tree (Tree *tree, FILE *output)
 {
-    fprintf (output, "jump main\n");
+    fprintf (output, "jmp main\n");
 
     stack_init (&chars, 10);
 
@@ -171,7 +171,7 @@ void print_op (Node *node, FILE *output)
         }
         case MUL:
         {
-            fprintf (output, "mul\n");
+            fprintf (output, "mult\n");
             break;
         }
         case DIV:
