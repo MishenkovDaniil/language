@@ -24,6 +24,7 @@ int main (int argc, const char **argv)
 
     assert (exe_file);
     assert (tree_file);
+    assert (asm_file);
 
     int txt_size = get_file_size (argv[1]);
     int n_lines = 0;
@@ -36,7 +37,6 @@ int main (int argc, const char **argv)
 
     Stack lexems = {};
     stack_init (&lexems, 100);
-    //Lexem *lexems[100] = {};
 
     lexer (text, &lexems);
 
@@ -45,14 +45,14 @@ int main (int argc, const char **argv)
     Tree tree = {};
     unsigned int err =0;
 
-    //tree_fill (&tree, lexems);
-    //fprintf (stderr, "root->left [%p]\n", tree.root->left);
-    //tree_check (&tree, &err);
+    tree_fill (&tree, &lexems);
+    fprintf (stderr, "root->left [%p]\n", tree.root->left);
+    tree_check (&tree, &err);
 
-    //print_tree (&tree, asm_file);
+    print_tree (&tree, asm_file);
 
-    //tree_dtor (&tree);
-    //free_lexems (lexems);
     stack_dtor (&lexems);
+    tree_dtor (&tree);
+    //free_lexems (lexems);
     free (text);
 }
