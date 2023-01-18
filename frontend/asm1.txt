@@ -1,0 +1,39 @@
+jump main
+push 5
+pop [1]\\ global
+
+sum:
+pop [3]\\c_3
+pop [2]\\b_2
+pop [1]\\a1
+push 5
+push [1]\\a1
+dup
+pop [1]\\a1
+add
+pop [1]\\a1
+push [1]\\a1
+dup
+pop [1]\\a1
+push [2]\\b_2
+dup
+pop [2]\\b_2
+add
+RET
+
+main:
+push 0
+pop [5]\\ a2
+push 11
+pop [4]\\a2
+push [4]\\a2
+dup
+pop [4]\\a2
+push 2
+mul
+push 4
+add
+push 2
+call sum
+push 0
+RET

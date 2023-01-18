@@ -1,6 +1,6 @@
 NVAR global = 5;
 
-NFUNC sum(a1, b_2)
+NFUNC sum(a1, b_2, c_3)
 {
     a1 = 5 + a1;
     return a1 + b_2;
