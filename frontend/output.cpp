@@ -1,16 +1,67 @@
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 #include "tree.h"
 #include "output.h"
+#include "stack.h"
 
-static int index = 1;
+/// var
+/// index
+/// shift otn RBP
+/// hash (optional)
+
+static int char_index = 1;
+
+Stack chars = {};
+
+void add_struct (const char *var)
+{
+    if (!(find_var (var)))
+    {
+        Var *struct_var = (Var *)calloc (1, sizeof (Var));
+
+        struct_var->data = var;
+
+        stack_push (&chars, struct_var);
+
+        char_index++;
+    }
+}
+
+int find_var (const char *var)
+{
+    for (int i = 1; i < char_index; i++)
+    {
+        if (is_my_var (var, i))
+        {
+            return i;
+        }
+    }
+
+    return 0;
+}
+
+bool is_my_var (const char *var, int index)
+{
+    Var *cur_var = (Var *)stack_get_token (&chars, index);
+
+    if (cur_var)
+    {
+        return strcmp (cur_var->data, var) == 0;
+    }
+
+    return 0;
+}
 
 void print_tree (Tree *tree, FILE *output)
 {
     fprintf (output, "jump main\n");
 
+    stack_init (&chars, 10);
+
     print_node (tree->root, output);
+    stack_dtor (&chars);
 }
 
 void print_node (Node *node, FILE *output)
@@ -50,16 +101,13 @@ void print_def (Node *node, FILE *output)
         }
     }
 }
-
 void print_nvar (Node *node, FILE *output)
 {
     print_expr (node->right, output);
 
-    fprintf (output, "pop [%d]\\\\%s", index, node->value.var);
+    add_struct (node->value.var);
 
-    //add_struct (node->value.var, index);
-
-    index++;
+    fprintf (output, "pop [%d]\\\\ %s\n", char_index - 1, node->value.var);
 }
 
 void print_expr (Node *node, FILE *output)
@@ -138,14 +186,13 @@ void print_op (Node *node, FILE *output)
         }
     }
 }
-
 void print_var_val (Node *node, FILE *output)
 {
-    int i = 1;//find_var (node->value.var);
+    int i = find_var (node->value.var);
 
     if (i == 0)
     {
-        fprintf (stderr, "Error: variable %s was not defined", node->value.var);
+        fprintf (stderr, "Error: variable {%s} was not defined", node->value.var);
         return;
     }
 
@@ -157,7 +204,7 @@ void print_var_val (Node *node, FILE *output)
 void print_call (Node *node, FILE *output)
 {
     print_arg (node->right, output);
-    fprintf (output, "call %s", node->value.var);
+    fprintf (output, "call %s\n", node->value.var);
 }
 
 void print_arg (Node *node, FILE *output)
@@ -197,10 +244,14 @@ void print_par (Node *node, FILE *output)
         return;
     }
 
-    print_par (node->right, output);
+    add_struct (node->value.var);//
 
-    fprintf (output, "pop \\\\%s\n", node->value.var);
+    print_par (node->right, output);
+    int i = find_var (node->value.var);//?? works??
+
+    fprintf (output, "pop [%d]\\\\%s\n", i, node->value.var);//i?
 }
+
 void print_block (Node *node, FILE *output)
 {
     if (node->left)
@@ -212,6 +263,14 @@ void print_block (Node *node, FILE *output)
         print_block (node->right, output);
     }
 }
+
+void print_var (Node *node, FILE *output)
+{
+    int i = find_var (node->value.var);
+
+    fprintf (output, "push [%d]\\\\%s\n", i, node->value.var);
+}
+
 
 void print_seq (Node *node, FILE *output)
 {
@@ -237,11 +296,11 @@ void print_seq (Node *node, FILE *output)
             print_ass (node, output);
             break;
         }
-        /*case VAR:
+        case VAR:
         {
             print_var (node, output);
             break;
-        }*/
+        }
         case IF:
         {
             //print_if (node, output);
@@ -280,7 +339,7 @@ void print_ass (Node *node, FILE *output)
         return;
     }
 
-    int i = 1;//find_var (node->left->value.var);
+    int i = find_var (node->left->value.var);
     fprintf (output, "pop [%d]\\\\%s\n", i, node->left->value.var);
 }
 
