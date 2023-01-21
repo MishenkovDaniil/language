@@ -1,0 +1,99 @@
+IN
+
+push 0
+je LINEAR
+pop RAX
+
+IN
+
+push 0
+je X_IS_ZERO
+pop RBX
+
+IN
+
+push 0
+je ZERO_LAST_COEFF
+pop RCX
+
+
+
+
+LINEAR:
+IN
+
+push 0
+je ZERO_X_COEFFS
+pop RBX
+
+IN
+
+push -1
+mult
+push RBX
+div
+out
+hlt
+
+
+
+
+
+ZERO_X_COEFFS:
+IN
+push 0
+je INF_ROOTS
+jmp NO_ROOTS
+
+
+
+
+X_IS_ZERO:
+IN
+
+push -1
+mult
+push RAX
+div
+
+push 0
+je ZERO_ROOT
+jb NO_ROOTS
+
+sqrt
+dup
+push -1
+mult
+out
+out
+hlt
+
+
+
+ZERO_LAST_COEFF:
+out
+
+push RBX
+push -1
+mult
+push RAX
+div
+out
+hlt
+
+
+
+NO_ROOTS:
+push 777
+out
+hlt
+
+ZERO_ROOT:
+push 0
+out
+hlt
+
+INF_ROOTS:
+push 999
+out
+hlt

@@ -1,0 +1,139 @@
+IN
+IN
+IN
+
+pop RCX
+pop RBX
+pop RAX
+
+push RAX
+push 0
+je LINEAR
+
+push RBX
+push 0
+je X_IS_ZERO
+
+push RCX
+push 0
+je ZERO_LAST_COEFF
+call SQUARE_SOLVER
+hlt
+
+SQUARE_SOLVER:
+push RBX
+dup
+mult
+push RAX
+push RCX
+push 4
+mult
+mult
+sub
+
+push 0
+jb NO_ROOTS
+
+sqrt
+dup
+push RBX
+push -1
+mult
+add
+push 2
+push RAX
+mult
+div
+out
+
+push -1
+mult
+push RBX
+push -1
+mult
+add
+push 2
+push RAX
+mult
+div
+out
+RET
+
+LINEAR:
+
+push RBX
+push 0
+je ZERO_X_COEFFS
+
+push RCX
+push -1
+mult
+push RBX
+div
+out
+hlt
+
+
+
+
+
+ZERO_X_COEFFS:
+
+push RCX
+push 0
+je INF_ROOTS
+jmp NO_ROOTS
+
+
+
+
+X_IS_ZERO:
+
+push RCX
+push -1
+mult
+push RAX
+div
+
+push 0
+je ZERO_ROOT
+push 0
+jb NO_ROOTS
+
+sqrt
+dup
+push -1
+mult
+out
+out
+hlt
+
+
+
+ZERO_LAST_COEFF:
+out
+
+push RBX
+push -1
+mult
+push RAX
+div
+out
+hlt
+
+
+
+NO_ROOTS:
+push 777
+out
+hlt
+
+ZERO_ROOT:
+push 0
+out
+hlt
+
+INF_ROOTS:
+push 8
+out
+hlt

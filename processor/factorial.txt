@@ -1,0 +1,25 @@
+IN
+pop RAX
+push RAX
+call FACTORIAL
+out
+hlt
+
+FACTORIAL:
+
+push RAX
+push 1
+je next
+
+push 1
+sub
+dup
+pop RAX
+mult
+
+call FACTORIAL
+RET
+
+next:
+pop RAX
+RET

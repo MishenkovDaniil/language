@@ -1,0 +1,35 @@
+LABEL_0:
+IN
+PUSH 0
+JE label_22
+IN
+PUSH 0
+JE label_15
+OUT
+PUSH 3
+OUT
+HLT
+LABEL_15:
+OUT
+PUSH 1
+JE label_31
+JMP label_36
+LABEL_22:
+IN
+PUSH 0
+JA label_31
+PUSH 0
+JB label_36
+LABEL_31:
+PUSH 100
+MULT
+OUT
+HLT
+LABEL_36:
+PUSH 10000
+MULT
+OUT
+HLT
+magic_number is 23117
+version is 1
+number of instr is 41

@@ -1,0 +1,11 @@
+IN
+push 0
+jbe label_1
+push 15
+out
+hlt
+
+label_1:
+push 89
+out
+hlt
