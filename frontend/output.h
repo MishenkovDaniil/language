@@ -2,30 +2,32 @@
 #define OUTPUT_H
 
 #include "tree.h"
+#include "stack.h"
 
 struct Var
 {
     int index = 0;
-    const char *data = nullptr;
+    char data[20] = "";
 };
 
-void add_struct (const char *var);
-int  find_var   (const char *var);
-bool is_my_var  (const char *var, int index);
+bool add_struct   (const char *var, Stack *block_names = nullptr);
+int  find_var     (const char *var);
+int  find_stk_var (const char *var, Stack *block_names);
+bool is_my_var    (const char *var, int index, Stack *block_names);
 
 void print_tree    (Tree *tree, FILE *output);
 
 void print_node    (Node *node, FILE *output);
 
 void print_def     (Node *node, FILE *output);
-void print_nvar    (Node *node, FILE *output);
+void print_nvar    (Node *node, FILE *output, Stack *block_names = nullptr);
 void print_func    (Node *node, FILE *output);
 
-void print_par     (Node *node, FILE *output);
+void print_par     (Node *node, FILE *output, Stack *block_names);
 void print_arg     (Node *node, FILE *output);
 
-void print_block   (Node *node, FILE *output);
-void print_seq     (Node *node, FILE *output);
+void print_block   (Node *node, FILE *output, Stack *block_names);
+void print_seq     (Node *node, FILE *output, Stack *block_names);
 
 void print_ass     (Node *node, FILE *output);
 void print_call    (Node *node, FILE *output);

@@ -12,39 +12,86 @@
 /// hash (optional)
 
 static int char_index = 1;
+static int start_capacity = 10;
 
-Stack chars = {};
+static Stack names = {};
 
-void add_struct (const char *var)
+bool add_struct (const char *var, Stack *block_names)
 {
-    if (!(find_var (var)))
+    assert (var);
+
+    if (!(block_names))
+    {
+        block_names = (Stack *)stack_get_token (&names, 0);
+    }
+
+    int index = find_var (var);
+
+    if (!(index))
     {
         Var *struct_var = (Var *)calloc (1, sizeof (Var));
 
-        struct_var->data = var;
+        strcpy (struct_var->data, var);
+        struct_var->index = char_index;
 
-        stack_push (&chars, struct_var);
+        stack_push (block_names, struct_var);
 
         char_index++;
+        printf ("%s, %d\n", struct_var->data, char_index);
+
+        return true;
     }
+    else if (index == -1)
+    {
+        return false;
+    }
+
+    return false;
 }
 
 int find_var (const char *var)
 {
-    for (int i = 1; i < char_index; i++)
+    size_t num_of_defs = 0;
+    int var_index = 0;
+
+    for (int stack_num = 0; stack_num < names.size; stack_num++)
     {
-        if (is_my_var (var, i))
+        int founded_idx = find_stk_var (var, (Stack *)(stack_get_token (&names, stack_num)));
+
+        if (founded_idx)
         {
-            return i;
+            num_of_defs++;
+            var_index = founded_idx;
+        }
+    }
+
+    if (num_of_defs > 1)
+    {
+        printf ("Error: multiple definitions of \"%s\"", var);
+        return -1;
+    }
+
+    return var_index;
+}
+
+int find_stk_var (const char *var, Stack *block_names)
+{
+    assert (block_names);
+
+    for (int i = 0; i < block_names->size; i++)
+    {
+        if (is_my_var (var, i, block_names))
+        {
+            return ((Var *)stack_get_token (block_names, i))->index;
         }
     }
 
     return 0;
 }
 
-bool is_my_var (const char *var, int index)
+bool is_my_var (const char *var, int index, Stack *block_names)
 {
-    Var *cur_var = (Var *)stack_get_token (&chars, index);
+    Var *cur_var = (Var *)stack_get_token (block_names, index);
 
     if (cur_var)
     {
@@ -56,12 +103,22 @@ bool is_my_var (const char *var, int index)
 
 void print_tree (Tree *tree, FILE *output)
 {
+    assert (tree);
+    assert (output);
+
     fprintf (output, "jmp main\n");
 
-    stack_init (&chars, 10);
+    stack_init (&names, 5);
+
+    Stack global_names = {};
+    stack_init (&global_names, 10);
+
+    stack_push (&names, &global_names);
 
     print_node (tree->root, output);
-    stack_dtor (&chars);
+
+    stack_dtor (&global_names);
+    stack_dtor (&names);
 }
 
 void print_node (Node *node, FILE *output)
@@ -101,13 +158,14 @@ void print_def (Node *node, FILE *output)
         }
     }
 }
-void print_nvar (Node *node, FILE *output)
+
+void print_nvar (Node *node, FILE *output, Stack *block_names)
 {
+    add_struct (node->value.var, block_names);
+
     print_expr (node->right, output);
 
-    add_struct (node->value.var);
-
-    fprintf (output, "pop [%d]\\\\ %s\n", char_index - 1, node->value.var);
+    fprintf (output, "pop [%d] /*%s*/\n", char_index - 1, node->value.var);
 }
 
 void print_expr (Node *node, FILE *output)
@@ -192,13 +250,18 @@ void print_var_val (Node *node, FILE *output)
 
     if (i == 0)
     {
-        fprintf (stderr, "Error: variable {%s} was not defined", node->value.var);
+        fprintf (stderr, "Error: variable {%s} was not defined.(%s)\n", node->value.var, __PRETTY_FUNCTION__);
+        return;
+    }
+    else if (i == -1)
+    {
+        fprintf (stderr, "Error: variable {%s} is multiple defined.\n", node->value.var);
         return;
     }
 
-    fprintf (output, "push [%d]\\\\%s\n", i, node->value.var);
-    fprintf (output, "dup\n");
-    fprintf (output, "pop [%d]\\\\%s\n", i, node->value.var);
+    fprintf (output, "push [%d] /*%s*/\n", i, node->value.var);
+    //fprintf (output, "dup\n");
+    //fprintf (output, "pop [%d] /*%s*/\n", i, node->value.var);
 }
 
 void print_call (Node *node, FILE *output)
@@ -221,11 +284,23 @@ void print_arg (Node *node, FILE *output)
 
 void print_func (Node *node, FILE *output)
 {
+    if (!(add_struct (node->value.var)))
+    {
+        //error
+        printf ("error.(%d)\n", __LINE__);
+        return;
+    }
+
     fprintf (output, "\n%s:\n", node->value.var);
+
+    Stack func = {};
+    stack_init (&func, start_capacity);
+
+    stack_push (&names, &func);
 
     if (node->left)
     {
-        print_par (node->left, output);
+        print_par (node->left, output, &func);
     }
 
     if (!(node->right))
@@ -234,33 +309,41 @@ void print_func (Node *node, FILE *output)
         return;
     }
 
-    print_block (node->right, output);
+    print_block (node->right, output, &func);
+
+    stack_pop (&names);
+    stack_dtor (&func);
 }
 
-void print_par (Node *node, FILE *output)
+void print_par (Node *node, FILE *output, Stack *block_names)
 {
     if (!(node))
     {
         return;
     }
 
-    add_struct (node->value.var);//
+    if (!(add_struct (node->value.var, block_names)))
+    {
+        return;
+    }
 
-    print_par (node->right, output);
-    int i = find_var (node->value.var);//?? works??
+    int i = char_index - 1;
 
-    fprintf (output, "pop [%d]\\\\%s\n", i, node->value.var);//i?
+    print_par (node->right, output, block_names);
+//    int i = find_var (node->value.var);//?? works??
+
+    fprintf (output, "pop [%d] /*%s*/\n", i, node->value.var);//i?
 }
 
-void print_block (Node *node, FILE *output)
+void print_block (Node *node, FILE *output, Stack *block_names)
 {
     if (node->left)
     {
-        print_seq (node->left, output);
+        print_seq (node->left, output, block_names);
     }
     if (node->right)
     {
-        print_block (node->right, output);
+        print_block (node->right, output, block_names);
     }
 }
 
@@ -268,11 +351,22 @@ void print_var (Node *node, FILE *output)
 {
     int i = find_var (node->value.var);
 
-    fprintf (output, "push [%d]\\\\%s\n", i, node->value.var);
+    if (i == 0)
+    {
+        fprintf (stderr, "Error: variable {%s} was not defined.(%s)\n", node->value.var, __PRETTY_FUNCTION__);
+        return;
+    }
+    else if (i == -1)
+    {
+        fprintf (stderr, "Error: variable {%s} is multiple defined.\n", node->value.var);
+        return;
+    }
+
+    fprintf (output, "push [%d] /*%s*/\n", i, node->value.var);
 }
 
 
-void print_seq (Node *node, FILE *output)
+void print_seq (Node *node, FILE *output, Stack *block_names)
 {
     if (!(node))
     {
@@ -283,7 +377,7 @@ void print_seq (Node *node, FILE *output)
     {
         case NVAR:
         {
-            print_nvar (node, output);
+            print_nvar (node, output, block_names);
             break;
         }
         case CONST:
@@ -340,7 +434,19 @@ void print_ass (Node *node, FILE *output)
     }
 
     int i = find_var (node->left->value.var);
-    fprintf (output, "pop [%d]\\\\%s\n", i, node->left->value.var);
+
+    if (i == 0)
+    {
+        fprintf (stderr, "Error: variable {%s} was not defined.(%s)\n", node->left->value.var, __PRETTY_FUNCTION__);
+        return;
+    }
+    else if (i == -1)
+    {
+        fprintf (stderr, "Error: variable {%s} is multiple defined.\n", node->left->value.var);
+        return;
+    }
+
+    fprintf (output, "pop [%d] /*%s*/\n", i, node->left->value.var);
 }
 
 void print_ret (Node *node, FILE *output)
