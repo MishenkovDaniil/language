@@ -150,7 +150,7 @@ void print_def (Node *node, FILE *output)
         {
             if (is_first_func)
             {
-                fprintf (output, "jmp main\n");
+                fprintf (output, "call main\nout\nhlt\n");
                 is_first_func = false;
             }
 
