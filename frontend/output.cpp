@@ -106,8 +106,6 @@ void print_tree (Tree *tree, FILE *output)
     assert (tree);
     assert (output);
 
-    fprintf (output, "jmp main\n");
-
     stack_init (&names, 5);
 
     Stack global_names = {};
@@ -134,6 +132,8 @@ void print_node (Node *node, FILE *output)
 
 void print_def (Node *node, FILE *output)
 {
+    static bool is_first_func = true;
+
     if (!(node))
     {
         return;
@@ -148,6 +148,12 @@ void print_def (Node *node, FILE *output)
         }
         case NFUN:
         {
+            if (is_first_func)
+            {
+                fprintf (output, "jmp main\n");
+                is_first_func = false;
+            }
+
             print_func (node, output);
             break;
         }
