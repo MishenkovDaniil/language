@@ -43,17 +43,17 @@ int is_comment (char *cmd, char **text)
     {
         char *comm_end = strstr (*text, "*/");
 
-        if (comm_end)
+        if (strstr (cmd, "*/"))
+        {
+            return_value = 1;
+        }
+        else if (comm_end)
         {
             *text = comm_end;
             *text += 2;
 
             skip_spaces (text);
 
-           return_value = 1;
-        }
-        else if (strstr (cmd, "*/"))
-        {
             return_value = 1;
         }
         else
