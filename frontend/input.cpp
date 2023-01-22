@@ -36,6 +36,7 @@
 #include "input.h"
 #include "op_types.h"
 
+#define stack_lexem(index)              ((Lexem *)stack_get_token (lexems, index))
 #define create_num(num)                 tree_create_node (TYPE_NUM, #num)
 #define Left                            node->left
 #define Right                           node->right
@@ -49,7 +50,7 @@
 //#define SIN(node)                       tree_create_node (OP, "SIN", nullptr, node)
 //#define COS(node)                       tree_create_node (OP, "COS", nullptr, node)
 
-Node *tree_fill (Tree *tree, Lexem **lexems)
+Node *tree_fill (Tree *tree, Stack *lexems)
 {
     GetNodeG (tree, lexems);
 
@@ -61,12 +62,13 @@ Node *tree_fill (Tree *tree, Lexem **lexems)
     return tree->root;
 }
 
-Node *GetNodeG (Tree *tree, Lexem **lexems)
+Node *GetNodeG (Tree *tree, Stack *lexems)
 {
     int index = 0;
     tree->root = GetNodeDefs (lexems, &index);
+    swap_defs (tree->root);
 
-    if (!(lexems[index] == nullptr))
+    if (!(stack_lexem(index) == nullptr))
     {
         debug_print ("Error: last symbol to read is not '\\0' (expr is  now)");
         return nullptr;
@@ -77,35 +79,36 @@ Node *GetNodeG (Tree *tree, Lexem **lexems)
         return nullptr;
     }
 */
-
     return tree->root;
 }
 
-Node *GetNodeDefs (Lexem **lexems, int *index)
+Node *GetNodeDefs (Stack *lexems, int *index)
 {
     Node *result = (Node *)calloc (1, sizeof (Node));
     result->type = DEFS;
 
-    if (lexems[*index] == nullptr)
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    if (cur_lexem == nullptr)
     {
         return nullptr;
     }
-    if (lexems[*index]->type == L_DEFAULT)
+    if (cur_lexem->type == L_DEFAULT)
     {
         return nullptr;
     }
 
-    if (lexems[*index]->type == L_SEQ)
+    if (cur_lexem->type == L_SEQ)
     {
         (*index)++;
         result = GetNodeDefs (lexems, index);
     }
-    else if (lexems[*index]->type == L_NFUN || lexems[*index]->type == L_NVAR)
+    else if (cur_lexem->type == L_NFUN || cur_lexem->type == L_NVAR)
     {
         result = (Node *)calloc (1, sizeof (Node));
         result->type = DEFS;
 
-        if (lexems[*index]->type == L_NVAR)
+        if (cur_lexem->type == L_NVAR)
         {
             result->left = GetNodeNvar (lexems, index);
         }
@@ -120,21 +123,37 @@ Node *GetNodeDefs (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeNfun (Lexem **lexems, int *index)
+void swap_defs (Node *node)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        for (Node *def = node; def != nullptr; def = def->right)
+        {
+            if (def->right != nullptr && def->right->left != nullptr && def->right->left->type == NVAR && def->left->type == NFUN)
+            {
+                Node *temp = def->right->left;
+                def->right->left = def->left;
+                def->left = temp;
+            }
+        }
+    }
+}
+
+Node *GetNodeNfun (Stack *lexems, int *index)
 {
     Node *result = (Node *)calloc (1, sizeof (Node));
 
     result->type = NFUN;
-    result->value.var = lexems[*index]->value.var;
+    result->value.var = stack_lexem(*index)->value.var;
 
     (*index)++;
 
-    if (lexems[*index]->type == L_STARTING_BRACKET)
+    if (stack_lexem(*index)->type == L_STARTING_BRACKET)
     {
         (*index)++;
 
         result->left = GetNodePar (lexems, index);
-        if (lexems[*index]->type != L_CLOSING_BRACKET)
+        if (stack_lexem(*index)->type != L_CLOSING_BRACKET)
         {
             debug_print ("Syntax error: no closing bracket in args of func %s.\n", result->value.var);
             return nullptr;
@@ -143,7 +162,7 @@ Node *GetNodeNfun (Lexem **lexems, int *index)
         (*index)++;
     }
 
-    if (lexems[*index]->type != L_BLOCK_START)
+    if (stack_lexem(*index)->type != L_BLOCK_START)
     {
         debug_print ("Syntax error: no '{' after function defining.\n");
         return nullptr;
@@ -156,15 +175,15 @@ Node *GetNodeNfun (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodePar (Lexem **lexems, int *index)
+Node *GetNodePar (Stack *lexems, int *index)
 {
     Node *result = nullptr;
 
-    if (lexems[*index]->type == L_VAR)
+    if (stack_lexem(*index)->type == L_VAR)
     {
         result = (Node *)calloc (1, sizeof (Node));
         result->type = PAR;
-        result->value.var = lexems[*index]->value.var;
+        result->value.var = stack_lexem(*index)->value.var;
 
         (*index)++;
 
@@ -174,11 +193,11 @@ Node *GetNodePar (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeBlock (Lexem **lexems, int *index)
+Node *GetNodeBlock (Stack *lexems, int *index)
 {
     Node *result = GetNodeSeq (lexems, index);
 
-    if (lexems[*index]->type != L_BLOCK_END)
+    if (stack_lexem(*index)->type != L_BLOCK_END)
     {
         debug_print ("no closing '}'.\n");
 
@@ -190,12 +209,12 @@ Node *GetNodeBlock (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeSeq (Lexem **lexems, int *index)
+Node *GetNodeSeq (Stack *lexems, int *index)
 {
     Node *result = (Node *)calloc (1, sizeof (Node));
     result->type = SEQ;
 
-    switch (lexems[*index]->type)
+    switch (stack_lexem(*index)->type)
     {
         case L_BLOCK_START:
         {
@@ -242,7 +261,7 @@ Node *GetNodeSeq (Lexem **lexems, int *index)
         }
     }
 
-    if (result->left != nullptr && lexems[*index] != nullptr && lexems[*index]->type == L_SEQ)
+    if (result->left != nullptr && stack_lexem(*index) != nullptr && stack_lexem(*index)->type == L_SEQ)
     {
         (*index)++;
         result->right = GetNodeSeq (lexems, index);
@@ -251,11 +270,11 @@ Node *GetNodeSeq (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeNvar (Lexem **lexems, int *index)
+Node *GetNodeNvar (Stack *lexems, int *index)
 {
     Node *result = (Node *)calloc (1, sizeof (Node));
     result->type = NVAR;
-    result->value.var = lexems[*index]->value.var;
+    result->value.var = stack_lexem(*index)->value.var;
 
     (*index)++;
 
@@ -264,7 +283,7 @@ Node *GetNodeNvar (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeAss (Lexem **lexems, int *index)
+Node *GetNodeAss (Stack *lexems, int *index)
 {
     Node *result = (Node *)calloc (1, sizeof (Node));
 
@@ -278,7 +297,7 @@ Node *GetNodeAss (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeRet (Lexem **lexems, int *index)
+Node *GetNodeRet (Stack *lexems, int *index)
 {
     Node *result = (Node *)calloc (1, sizeof (Node));
     result->type = RET;
@@ -289,21 +308,21 @@ Node *GetNodeRet (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeCall (Lexem **lexems, int *index)
+Node *GetNodeCall (Stack *lexems, int *index)
 {
     Node *result = (Node *)calloc (1, sizeof (Node));
     result->type = CALL;
 
-    result->value.var = lexems[*index]->value.var;
+    result->value.var = stack_lexem(*index)->value.var;
     (*index)++;
 
-    if (lexems[*index]->type == L_STARTING_BRACKET)
+    if (stack_lexem(*index)->type == L_STARTING_BRACKET)
     {
         (*index)++;
 
         result->right = GetNodeArg (lexems, index);
 
-        if (lexems[*index]->type != L_CLOSING_BRACKET)
+        if (stack_lexem(*index)->type != L_CLOSING_BRACKET)
         {
             debug_print ("Syntax error: no closing bracket in args of func %s.\n", result->value.var);
             return nullptr;
@@ -315,7 +334,7 @@ Node *GetNodeCall (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeArg (Lexem **lexems, int *index)
+Node *GetNodeArg (Stack *lexems, int *index)
 {
     Node *result = nullptr;
 
@@ -323,7 +342,9 @@ Node *GetNodeArg (Lexem **lexems, int *index)
     assert (result);
     result->type = ARG;
 
-    if (lexems[*index]->type == L_NUM || lexems[*index]->type == L_VAR || lexems[*index]->type == L_OP || lexems[*index]->type == L_CALL)
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    if (cur_lexem->type == L_NUM || cur_lexem->type == L_VAR || cur_lexem->type == L_OP || cur_lexem->type == L_CALL)
     {
         result->left = GetNodeE (lexems, index);
         result->right = GetNodeArg (lexems, index);
@@ -331,25 +352,27 @@ Node *GetNodeArg (Lexem **lexems, int *index)
 
     return result;
 }
-Node *GetNodeIf (Lexem **lexems, int *index)
+Node *GetNodeIf (Stack *lexems, int *index)
 {
     return nullptr;
 }
-Node *GetNodeWhile (Lexem **lexems, int *index)
+Node *GetNodeWhile (Stack *lexems, int *index)
 {
     return nullptr;
 }
 
-Node *GetNodeE (Lexem **lexems, int *index)
+Node *GetNodeE (Stack *lexems, int *index)
 {
     Node *result = GetNodeT (lexems, index);
     Node *right_node = nullptr;
 
-    while (lexems[*index]->type == L_OP &&
-          (lexems[*index]->value.op_val == ADD ||
-           lexems[*index]->value.op_val == SUB))
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    while (cur_lexem->type == L_OP &&
+          (cur_lexem->value.op_val == ADD ||
+           cur_lexem->value.op_val == SUB))
     {
-        Op_types op = lexems[*index]->value.op_val;
+        Op_types op = cur_lexem->value.op_val;
 
         (*index)++;
 
@@ -363,21 +386,25 @@ Node *GetNodeE (Lexem **lexems, int *index)
         {
             result = SUB (result, right_node);
         }
+
+        cur_lexem = stack_lexem(*index);
     }
 
     return result;
 }
 
-Node *GetNodeT (Lexem **lexems, int *index)
+Node *GetNodeT (Stack *lexems, int *index)
 {
     Node *result = GetNodeD (lexems, index);
     Node *right_node = nullptr;
 
-    while (lexems[*index]->type == L_OP &&
-          (lexems[*index]->value.op_val == MUL ||
-           lexems[*index]->value.op_val == DIV))
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    while (cur_lexem->type == L_OP &&
+          (cur_lexem->value.op_val == MUL ||
+           cur_lexem->value.op_val == DIV))
     {
-        Op_types op = lexems[*index]->value.op_val;
+        Op_types op = cur_lexem->value.op_val;
 
         (*index)++;
 
@@ -391,40 +418,48 @@ Node *GetNodeT (Lexem **lexems, int *index)
         {
             result = DIV (result, right_node);
         }
+
+        cur_lexem = stack_lexem(*index);
     }
 
     return result;
 }
 
-Node *GetNodeD (Lexem **lexems, int *index)
+Node *GetNodeD (Stack *lexems, int *index)
 {
     Node *result = GetNodeP (lexems, index);
     Node *right_node = nullptr;
 
-    while (lexems[*index]->type == L_OP &&
-           lexems[*index]->value.op_val == DEG)
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    while (cur_lexem->type == L_OP &&
+           cur_lexem->value.op_val == DEG)
     {
         (*index)++;
 
         right_node = GetNodeP (lexems, index);
 
         result = DEG (result, right_node);
+
+        cur_lexem = stack_lexem(*index);
     }
 
     return result;
 }
 
-Node *GetNodeP (Lexem **lexems, int *index)
+Node *GetNodeP (Stack *lexems, int *index)
 {
     Node *result = nullptr;
 
-    if (lexems[*index]->type == L_STARTING_BRACKET)
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    if (cur_lexem->type == L_STARTING_BRACKET)
     {
         (*index)++;
 
         result = GetNodeE (lexems, index);
 
-        if (!(lexems[*index]->type == L_CLOSING_BRACKET))
+        if (!(stack_lexem(*index)->type == L_CLOSING_BRACKET))
         {
             debug_print ("Error: no closing bracket (after opening one) (expr is  now)");
             return nullptr;
@@ -432,7 +467,7 @@ Node *GetNodeP (Lexem **lexems, int *index)
 
         (*index)++;
     }
-    else if (lexems[*index]->type == L_CALL)
+    else if (cur_lexem->type == L_CALL)
     {
         result = GetNodeCall (lexems, index);
     }
@@ -450,14 +485,16 @@ Node *GetNodeP (Lexem **lexems, int *index)
     return result;
 }
 
-Node *GetNodeN (Lexem **lexems, int *index)
+Node *GetNodeN (Stack *lexems, int *index)
 {
-    if (lexems[*index]->type == L_NUM)
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    if (cur_lexem->type == L_NUM)
     {
         Node *result = (Node *)calloc (1, sizeof(Node));
 
         result->type = CONST;
-        result->value.dbl_val = lexems[*index]->value.dbl_val;
+        result->value.dbl_val = cur_lexem->value.dbl_val;
 
         (*index)++;
 
@@ -465,20 +502,22 @@ Node *GetNodeN (Lexem **lexems, int *index)
     }
     else
     {
-        debug_print ("Error:not num in GetNum function");
+        debug_print ("Error:not num in GetNum function %d", cur_lexem->type);
     }
 
     return nullptr;
 }
 
-Node *GetNodeV (Lexem **lexems, int *index)
+Node *GetNodeV (Stack *lexems, int *index)
 {
-    if (lexems[*index]->type == L_VAR)
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    if (cur_lexem->type == L_VAR)
     {
         Node *result = (Node *)calloc (1, sizeof(Node));
 
         result->type = VAR;
-        result->value.var = lexems[*index]->value.var;
+        result->value.var = cur_lexem->value.var;
 
         (*index)++;
 

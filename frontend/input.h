@@ -3,6 +3,7 @@
 
 #include "lexems.h"
 #include "tree.h"
+#include "stack.h"
 
 #define debug_print(...)                                                                            \
 do                                                                                                  \
@@ -12,33 +13,34 @@ do                                                                              
 }while (0)
 
 void skip_spaces (char **str);
-Lexem **lexer (char *text, Lexem **lexems);
-void print_lexems (Lexem **lexems, FILE *output_file);
-void free_lexems (Lexem **lexems);
+Lexem **lexer (char *text, Stack *lexems);//Lexem **lexems);
+void print_lexems (Stack *lexems, FILE *output_file);
 
 
-Node *tree_fill (Tree *tree, Lexem **lexems);
-Node *GetNodeG (Tree *tree, Lexem **lexems);
-Node *GetNodeDefs (Lexem **lexems, int *index);
-Node *GetNodeNfun (Lexem **lexems, int *index);
-Node *GetNodeBlock (Lexem **lexems, int *index);
-Node *GetNodePar (Lexem **lexems, int *index);
-Node *GetNodeNvar (Lexem **lexems, int *index);
-Node *GetNodeAss (Lexem **lexems, int *index);
-Node *GetNodeSeq (Lexem **lexems, int *index);
+Node *tree_fill (Tree *tree, Stack *lexems);
+Node *GetNodeG (Tree *tree, Stack *lexems);
+Node *GetNodeDefs (Stack *lexems, int *index);
+Node *GetNodeNfun (Stack *lexems, int *index);
+Node *GetNodeBlock (Stack *lexems, int *index);
+Node *GetNodePar (Stack *lexems, int *index);
+Node *GetNodeNvar (Stack *lexems, int *index);
+Node *GetNodeAss (Stack *lexems, int *index);
+Node *GetNodeSeq (Stack *lexems, int *index);
 
-Node *GetNodeIf (Lexem **lexems, int *index);
-Node *GetNodeWhile (Lexem **lexems, int *index);
+Node *GetNodeIf (Stack *lexems, int *index);
+Node *GetNodeWhile (Stack *lexems, int *index);
 
-Node *GetNodeCall (Lexem **lexems, int *index);
-Node *GetNodeRet (Lexem **lexems, int *index);
-Node *GetNodeArg (Lexem **lexems, int *index);
+Node *GetNodeCall (Stack *lexems, int *index);
+Node *GetNodeRet (Stack *lexems, int *index);
+Node *GetNodeArg (Stack *lexems, int *index);
 
-Node *GetNodeE (Lexem **lexems, int *index);
-Node *GetNodeT (Lexem **lexems, int *index);
-Node *GetNodeD (Lexem **lexems, int *index);
-Node *GetNodeP (Lexem **lexems, int *index);
-Node *GetNodeN (Lexem **lexems, int *index);
-Node *GetNodeV (Lexem **lexems, int *index);
+Node *GetNodeE (Stack *lexems, int *index);
+Node *GetNodeT (Stack *lexems, int *index);
+Node *GetNodeD (Stack *lexems, int *index);
+Node *GetNodeP (Stack *lexems, int *index);
+Node *GetNodeN (Stack *lexems, int *index);
+Node *GetNodeV (Stack *lexems, int *index);
+
+void swap_defs (Node *node);
 
 #endif /* INPUT_H */
