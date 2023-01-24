@@ -21,20 +21,21 @@ Node *tree_create_node (Type type, const char *value, Node *left, Node *right)
         case OP:
         {
             node->type = OP;
-/*
+            /*
             if (strcasecmp ("DEFAULT", value) == 0)
             {
                 node->value.op_val = DEFAULT;
-            }*/
+            }
+            */
             if (0)
             {
                 0;
             }
 
             #define DEF_OP(name, num,...)                   \
-            else if (strcasecmp (#name, value) == 0)   \
+            else if (strcasecmp (#name, value) == 0)        \
             {                                               \
-                node->value.op_val = name;             \
+                node->value.op_val = name;                  \
             }
 
             #include "operations.h"
@@ -49,23 +50,40 @@ Node *tree_create_node (Type type, const char *value, Node *left, Node *right)
 
             break;
         }
-        case VAR:
-        {
-            node->type = VAR;
-
-            node->value.var = (char *)calloc (strlen (value) + 1, sizeof (char));
-            strcpy (node->value.var, value);
-
-            break;
-        }
-        case CONST:
-        {
-            node->type = CONST;
-
-            node->value.dbl_val = atof (value);
-
-            break;
-        }
+#define tree_type_case(node_type, put_var, put_dbl)                                     \
+    case node_type:                                                                     \
+    {                                                                                   \
+        node->type = node_type;                                                         \
+        if (value)                                                                      \
+        {                                                                               \
+            if (put_var)                                                                \
+            {                                                                           \
+                node->value.var = (char *)calloc (strlen (value) + 1, sizeof (char));   \
+                strcpy (node->value.var, value);                                        \
+            }                                                                           \
+            else if (put_dbl)                                                           \
+            {                                                                           \
+                node->value.dbl_val = atof (value);                                     \
+            }                                                                           \
+        }                                                                               \
+        break;                                                                          \
+    }
+        tree_type_case (VAR, 1, 0)
+        tree_type_case (NVAR, 1, 0)
+        tree_type_case (NFUN, 1, 0)
+        tree_type_case (PAR, 1, 0)
+        tree_type_case (CALL, 1, 0)
+        tree_type_case (CONST, 0, 1)
+        tree_type_case (DEFS, 0, 0)
+        tree_type_case (BLOCK, 0, 0)
+        tree_type_case (SEQ, 0, 0)
+        tree_type_case (IF, 0, 0)
+        tree_type_case (WHILE, 0, 0)
+        tree_type_case (BRANCH, 0, 0)
+        tree_type_case (RET, 0, 0)
+        tree_type_case (ASS, 0, 0)
+        tree_type_case (ARG, 0, 0)
+#undef tree_type_case
         default:
         {
             printf ("Error: wrong value type %d", type);
