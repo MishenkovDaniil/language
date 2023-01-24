@@ -53,14 +53,32 @@ Lexem **lexer (char *text, Stack *lexems)
             case '>':
             {
                 lexem->type = L_OP;
-                lexem->value.op_val = GT;
+
+                if (*(cur_smbl) == '=')
+                {
+                    lexem->value.op_val = GEQ;
+                    cur_smbl++;
+                }
+                else
+                {
+                    lexem->value.op_val = GT;
+                }
 
                 break;
             }
             case '<':
             {
                 lexem->type = L_OP;
-                lexem->value.op_val = LT;
+
+                if (*(cur_smbl) == '=')
+                {
+                    lexem->value.op_val = LEQ;
+                    cur_smbl++;
+                }
+                else
+                {
+                    lexem->value.op_val = LT;
+                }
 
                 break;
             }
@@ -111,9 +129,17 @@ Lexem **lexer (char *text, Stack *lexems)
             }
             case '=':
             {
-                if (lexems->size > 0) //lexems[idx - 1]->type == L_VAR)
+                if (*(cur_smbl) == '=')
+                {
+                    lexem->type = L_OP;
+                    lexem->value.op_val = EQ;
+
+                    cur_smbl++;
+                }
+                else if (lexems->size > 0) //lexems[idx - 1]->type == L_VAR)
                 {
                     Lexem *pop_lexem = (Lexem *)stack_pop (lexems);
+
                     if (pop_lexem->type == L_VAR)
                     {
                         stack_push (lexems, pop_lexem);
@@ -140,6 +166,22 @@ Lexem **lexer (char *text, Stack *lexems)
             {
                 is_needed = false;
                 //lexem->type = L_SEP;
+                break;
+            }
+            case '!':
+            {
+                if (*(cur_smbl) == '=')
+                {
+                    lexem->type = L_OP;
+                    lexem->value.op_val = NEQ;
+
+                    cur_smbl++;
+                }
+                else
+                {
+                    break;//must be op NOT
+                }
+
                 break;
             }
             default:
