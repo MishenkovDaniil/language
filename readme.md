@@ -7,4 +7,5 @@
 - check if asm is right in all cases
 - make error if wrong arg number
 - make "while"
-- make ">=" "<=" "=="
+- make NOT and NEG, AND and OR
+- update asm for if/while and '<', '>'...
