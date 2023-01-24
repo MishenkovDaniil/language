@@ -47,6 +47,9 @@
 #define MUL(left_node, right_node)      tree_create_node (OP, "MUL", left_node, right_node)
 #define DIV(left_node, right_node)      tree_create_node (OP, "DIV", left_node, right_node)
 #define DEG(left_node, right_node)      tree_create_node (OP, "DEG", left_node, right_node)
+#define GT(left_node, right_node)       tree_create_node (OP, "GT", left_node, right_node)
+#define LT(left_node, right_node)       tree_create_node (OP, "LT", left_node, right_node)
+
 //#define SIN(node)                       tree_create_node (OP, "SIN", nullptr, node)
 //#define COS(node)                       tree_create_node (OP, "COS", nullptr, node)
 
@@ -56,7 +59,7 @@ Node *tree_fill (Tree *tree, Stack *lexems)
 
     if (!(tree->root))
     {
-        debug_print ("Error: failed to read from input file");
+        debug_print ("Error: failed to read from input file.\n");
     }
 
     return tree->root;
@@ -70,7 +73,7 @@ Node *GetNodeG (Tree *tree, Stack *lexems)
 
     if (!(stack_lexem(index) == nullptr))
     {
-        debug_print ("Error: last symbol to read is not '\\0' (expr is  now)");
+        debug_print ("Error: last symbol to read is not '\\0'.\n");
         return nullptr;
     }/*
     if (lexems[index]->type != L_SEQ)
@@ -199,12 +202,65 @@ Node *GetNodeBlock (Stack *lexems, int *index)
 
     if (stack_lexem(*index)->type != L_BLOCK_END)
     {
-        debug_print ("no closing '}'.\n");
+        debug_print ("no closing '}', lexem type is {%d}.\n", stack_lexem(*index)->type);
 
         return nullptr;
     }
 
     (*index)++;
+
+    return result;
+}
+
+Node *GetNodeBranch (Stack *lexems, int *index)
+{
+    Node *result = (Node *)calloc (1, sizeof (Node));
+    result->type = BRANCH;
+
+    switch (stack_lexem(*index)->type)
+    {
+        case L_BLOCK_START:
+        {
+            (*index)++;
+            result->left = GetNodeBlock (lexems, index);
+            break;
+        }
+        case L_VAR:
+        {
+            result->left = GetNodeAss (lexems, index);
+            break;
+        }
+        case L_IF:
+        {
+            result->left = GetNodeIf (lexems, index);
+            break;
+        }
+        case L_WHILE:
+        {
+            result->left = GetNodeWhile (lexems, index);
+            break;
+        }
+        case L_RET:
+        {
+            result->left = GetNodeRet (lexems, index);
+            break;
+        }
+        case L_CALL:
+        {
+            result->left = GetNodeCall (lexems, index);
+            break;
+        }
+        default:
+        {
+            result->left = nullptr;
+            break;
+        }
+    }
+
+    if (result->left != nullptr && (result->left->type == IF || result->left->type == WHILE)  && stack_lexem(*index) != nullptr)
+    {
+        result->right = GetNodeBranch (lexems, index);
+    }
 
     return result;
 }
@@ -256,15 +312,30 @@ Node *GetNodeSeq (Stack *lexems, int *index)
         }
         default:
         {
-            result->left = nullptr;
+            result = nullptr;
             break;
         }
     }
 
-    if (result->left != nullptr && stack_lexem(*index) != nullptr && stack_lexem(*index)->type == L_SEQ)
+    if (result && stack_lexem(*index) != nullptr && (stack_lexem(*index)->type == L_SEQ || stack_lexem((*index) - 1)->type == L_BLOCK_END))
     {
-        (*index)++;
-        result->right = GetNodeSeq (lexems, index);
+        int index_t = stack_lexem(*index)->type;
+        int pre_index_t = stack_lexem((*index) - 1)->type;
+
+        if (index_t == L_SEQ || pre_index_t == L_BLOCK_END)
+        {
+            if ((index_t == L_SEQ && pre_index_t == L_BLOCK_END) || result->left == nullptr)
+            {
+                debug_print ("Syntax error: no command before ';'.\n");
+                return nullptr;
+            }
+            else if (index_t == L_SEQ)
+            {
+                (*index)++;
+            }
+
+            result->right = GetNodeSeq (lexems, index);
+        }
     }
 
     return result;
@@ -354,14 +425,74 @@ Node *GetNodeArg (Stack *lexems, int *index)
 }
 Node *GetNodeIf (Stack *lexems, int *index)
 {
-    return nullptr;
+    Node *result = (Node *)calloc (1, sizeof (Node));
+    result->type = IF;
+
+    //result->value.var = stack_lexem(*index)->value.var;
+    (*index)++;
+
+    if (stack_lexem(*index)->type == L_STARTING_BRACKET)
+    {
+        (*index)++;
+
+        result->left = GetNodeE (lexems, index);
+
+        if (stack_lexem(*index)->type != L_CLOSING_BRACKET)
+        {
+            debug_print ("Syntax error: no closing bracket in 'if' condition %s.\n", result->value.var);
+            return nullptr;
+        }
+
+        (*index)++;
+
+        result->right = GetNodeBranch (lexems, index);
+    }
+    else
+    {
+        printf ("Error: no if condition.\n");
+        return nullptr;
+    }
+    return result;
 }
+
 Node *GetNodeWhile (Stack *lexems, int *index)
 {
     return nullptr;
 }
 
 Node *GetNodeE (Stack *lexems, int *index)
+{
+    Node *result = GetNodeF (lexems, index);
+    Node *right_node = nullptr;
+
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    while (cur_lexem->type == L_OP &&
+          (cur_lexem->value.op_val == GT ||
+           cur_lexem->value.op_val == LT))
+    {
+        Op_types op = cur_lexem->value.op_val;
+
+        (*index)++;
+
+        right_node = GetNodeT (lexems, index);
+
+        if (op == GT)
+        {
+            result = GT (result, right_node);
+        }
+        else
+        {
+            result = LT (result, right_node);
+        }
+
+        cur_lexem = stack_lexem(*index);
+    }
+
+    return result;
+}
+
+Node *GetNodeF (Stack *lexems, int *index)
 {
     Node *result = GetNodeT (lexems, index);
     Node *right_node = nullptr;
@@ -461,7 +592,7 @@ Node *GetNodeP (Stack *lexems, int *index)
 
         if (!(stack_lexem(*index)->type == L_CLOSING_BRACKET))
         {
-            debug_print ("Error: no closing bracket (after opening one) (expr is  now)");
+            debug_print ("Error: no closing bracket (after opening one).\n");
             return nullptr;
         }
 
@@ -502,7 +633,7 @@ Node *GetNodeN (Stack *lexems, int *index)
     }
     else
     {
-        debug_print ("Error:not num in GetNum function %d", cur_lexem->type);
+        debug_print ("Error:not num in GetNum function %d.\n", cur_lexem->type);
     }
 
     return nullptr;
