@@ -409,20 +409,22 @@ Node *GetNodeArg (Stack *lexems, int *index)
 {
     Node *result = nullptr;
 
-    result = (Node *)calloc (1, sizeof (Node));
-    assert (result);
-    result->type = ARG;
-
     Lexem *cur_lexem = stack_lexem(*index);
 
     if (cur_lexem->type == L_NUM || cur_lexem->type == L_VAR || cur_lexem->type == L_OP || cur_lexem->type == L_CALL)
     {
+        result = (Node *)calloc (1, sizeof (Node));
+        assert (result);
+
+        result->type = ARG;
+
         result->left = GetNodeE (lexems, index);
         result->right = GetNodeArg (lexems, index);
     }
 
     return result;
 }
+
 Node *GetNodeIf (Stack *lexems, int *index)
 {
     Node *result = (Node *)calloc (1, sizeof (Node));
