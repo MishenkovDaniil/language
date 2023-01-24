@@ -50,7 +50,10 @@
 #define DEG(left_node, right_node)      tree_create_node (OP, "DEG", left_node, right_node)
 #define GT(left_node, right_node)       tree_create_node (OP, "GT", left_node, right_node)
 #define LT(left_node, right_node)       tree_create_node (OP, "LT", left_node, right_node)
-
+#define LEQ(left_node, right_node)      tree_create_node (OP, "LEQ", left_node, right_node)
+#define GEQ(left_node, right_node)      tree_create_node (OP, "GEQ", left_node, right_node)
+#define EQ(left_node, right_node)       tree_create_node (OP, "EQ", left_node, right_node)
+#define NEQ(left_node, right_node)      tree_create_node (OP, "NEQ", left_node, right_node)
 //#define SIN(node)                       tree_create_node (OP, "SIN", nullptr, node)
 //#define COS(node)                       tree_create_node (OP, "COS", nullptr, node)
 
@@ -88,8 +91,8 @@ Node *GetNodeG (Tree *tree, Stack *lexems)
 
 Node *GetNodeDefs (Stack *lexems, int *index)
 {
-    Node *result = (Node *)calloc (1, sizeof (Node));
-    result->type = DEFS;
+    Node *result = nullptr;
+
 
     Lexem *cur_lexem = stack_lexem(*index);
 
@@ -109,8 +112,7 @@ Node *GetNodeDefs (Stack *lexems, int *index)
     }
     else if (cur_lexem->type == L_NFUN || cur_lexem->type == L_NVAR)
     {
-        result = (Node *)calloc (1, sizeof (Node));
-        result->type = DEFS;
+        result = tree_create_node (DEFS);
 
         if (cur_lexem->type == L_NVAR)
         {
@@ -145,10 +147,7 @@ void swap_defs (Node *node)
 
 Node *GetNodeNfun (Stack *lexems, int *index)
 {
-    Node *result = (Node *)calloc (1, sizeof (Node));
-
-    result->type = NFUN;
-    result->value.var = stack_lexem(*index)->value.var;
+    Node *result = tree_create_node (NFUN, stack_lexem(*index)->value.var);
 
     (*index)++;
 
@@ -185,9 +184,7 @@ Node *GetNodePar (Stack *lexems, int *index)
 
     if (stack_lexem(*index)->type == L_VAR)
     {
-        result = (Node *)calloc (1, sizeof (Node));
-        result->type = PAR;
-        result->value.var = stack_lexem(*index)->value.var;
+        result = tree_create_node (PAR, stack_lexem(*index)->value.var);
 
         (*index)++;
 
@@ -215,8 +212,7 @@ Node *GetNodeBlock (Stack *lexems, int *index)
 
 Node *GetNodeBranch (Stack *lexems, int *index)
 {
-    Node *result = (Node *)calloc (1, sizeof (Node));
-    result->type = BRANCH;
+    Node *result = tree_create_node (BRANCH);
 
     switch (stack_lexem(*index)->type)
     {
@@ -268,8 +264,7 @@ Node *GetNodeBranch (Stack *lexems, int *index)
 
 Node *GetNodeSeq (Stack *lexems, int *index)
 {
-    Node *result = (Node *)calloc (1, sizeof (Node));
-    result->type = SEQ;
+    Node *result = tree_create_node (SEQ);
 
     switch (stack_lexem(*index)->type)
     {
@@ -344,9 +339,7 @@ Node *GetNodeSeq (Stack *lexems, int *index)
 
 Node *GetNodeNvar (Stack *lexems, int *index)
 {
-    Node *result = (Node *)calloc (1, sizeof (Node));
-    result->type = NVAR;
-    result->value.var = stack_lexem(*index)->value.var;
+    Node *result = tree_create_node (NVAR, stack_lexem(*index)->value.var);
 
     (*index)++;
 
@@ -357,11 +350,10 @@ Node *GetNodeNvar (Stack *lexems, int *index)
 
 Node *GetNodeAss (Stack *lexems, int *index)
 {
-    Node *result = (Node *)calloc (1, sizeof (Node));
-
-    result->type = ASS;
+    Node *result = tree_create_node (ASS);
 
     result->left = GetNodeV (lexems, index);
+
     (*index)++;
 
     result->right = GetNodeE (lexems, index);
@@ -382,10 +374,8 @@ Node *GetNodeRet (Stack *lexems, int *index)
 
 Node *GetNodeCall (Stack *lexems, int *index)
 {
-    Node *result = (Node *)calloc (1, sizeof (Node));
-    result->type = CALL;
+    Node *result = tree_create_node (CALL, stack_lexem(*index)->value.var);
 
-    result->value.var = stack_lexem(*index)->value.var;
     (*index)++;
 
     if (stack_lexem(*index)->type == L_STARTING_BRACKET)
@@ -414,10 +404,8 @@ Node *GetNodeArg (Stack *lexems, int *index)
 
     if (cur_lexem->type == L_NUM || cur_lexem->type == L_VAR || cur_lexem->type == L_OP || cur_lexem->type == L_CALL)
     {
-        result = (Node *)calloc (1, sizeof (Node));
+        result = tree_create_node (ARG);
         assert (result);
-
-        result->type = ARG;
 
         result->left = GetNodeE (lexems, index);
         result->right = GetNodeArg (lexems, index);
@@ -428,8 +416,7 @@ Node *GetNodeArg (Stack *lexems, int *index)
 
 Node *GetNodeIf (Stack *lexems, int *index)
 {
-    Node *result = (Node *)calloc (1, sizeof (Node));
-    result->type = IF;
+    Node *result = tree_create_node (IF);
 
     //result->value.var = stack_lexem(*index)->value.var;
     (*index)++;
@@ -471,8 +458,12 @@ Node *GetNodeE (Stack *lexems, int *index)
     Lexem *cur_lexem = stack_lexem(*index);
 
     while (cur_lexem->type == L_OP &&
-          (cur_lexem->value.op_val == GT ||
-           cur_lexem->value.op_val == LT))
+          (cur_lexem->value.op_val == GT  ||
+           cur_lexem->value.op_val == LT  ||
+           cur_lexem->value.op_val == LEQ ||
+           cur_lexem->value.op_val == GEQ ||
+           cur_lexem->value.op_val == EQ  ||
+           cur_lexem->value.op_val == NEQ ))
     {
         Op_types op = cur_lexem->value.op_val;
 
@@ -484,9 +475,25 @@ Node *GetNodeE (Stack *lexems, int *index)
         {
             result = GT (result, right_node);
         }
-        else
+        else if (op == LT)
         {
             result = LT (result, right_node);
+        }
+        else if (op == GEQ)
+        {
+            result = GEQ (result, right_node);
+        }
+        else if (op == LEQ)
+        {
+            result = LEQ (result, right_node);
+        }
+        else if (op == EQ)
+        {
+            result = EQ (result, right_node);
+        }
+        else
+        {
+            result = NEQ (result, right_node);
         }
 
         cur_lexem = stack_lexem(*index);
@@ -625,9 +632,8 @@ Node *GetNodeN (Stack *lexems, int *index)
 
     if (cur_lexem->type == L_NUM)
     {
-        Node *result = (Node *)calloc (1, sizeof(Node));
+        Node *result = tree_create_node (CONST);
 
-        result->type = CONST;
         result->value.dbl_val = cur_lexem->value.dbl_val;
 
         (*index)++;
@@ -648,10 +654,7 @@ Node *GetNodeV (Stack *lexems, int *index)
 
     if (cur_lexem->type == L_VAR)
     {
-        Node *result = (Node *)calloc (1, sizeof(Node));
-
-        result->type = VAR;
-        result->value.var = cur_lexem->value.var;
+        Node *result = tree_create_node (VAR, cur_lexem->value.var);
 
         (*index)++;
 
