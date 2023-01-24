@@ -16,7 +16,8 @@
     Ret      ::= Expr
 
     Op       ::= '+' | '-' | '*' | '/' | '^'
-    Expr     ::= T (['+' | '-'] T)*
+    Expr     ::= F (['>' | '<'] T)*
+    F        ::= T (['+' | '-'] T)*
     T        ::= Deg (['*' | '/'] Deg)*
     Deg      ::= Primary ('^' Primary)*
     Primary  ::= '('Expr')' | Var | Const | Call
@@ -453,6 +454,7 @@ Node *GetNodeIf (Stack *lexems, int *index)
         printf ("Error: no if condition.\n");
         return nullptr;
     }
+
     return result;
 }
 
