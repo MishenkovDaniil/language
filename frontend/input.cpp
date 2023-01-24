@@ -93,7 +93,6 @@ Node *GetNodeDefs (Stack *lexems, int *index)
 {
     Node *result = nullptr;
 
-
     Lexem *cur_lexem = stack_lexem(*index);
 
     if (cur_lexem == nullptr)
@@ -112,15 +111,13 @@ Node *GetNodeDefs (Stack *lexems, int *index)
     }
     else if (cur_lexem->type == L_NFUN || cur_lexem->type == L_NVAR)
     {
-        result = tree_create_node (DEFS);
-
         if (cur_lexem->type == L_NVAR)
         {
-            result->left = GetNodeNvar (lexems, index);
+            result = tree_create_node (DEFS, nullptr, GetNodeNvar (lexems, index));
         }
         else
         {
-            result->left = GetNodeNfun (lexems, index);
+            result = tree_create_node (DEFS, nullptr, GetNodeNfun (lexems, index));
         }
 
         result->right = GetNodeDefs (lexems, index);
@@ -147,31 +144,26 @@ void swap_defs (Node *node)
 
 Node *GetNodeNfun (Stack *lexems, int *index)
 {
-    Node *result = tree_create_node (NFUN, stack_lexem(*index)->value.var);
-
-    (*index)++;
+    Node *result = tree_create_node (NFUN, stack_lexem((*index)++)->value.var);
 
     if (stack_lexem(*index)->type == L_STARTING_BRACKET)
     {
         (*index)++;
 
         result->left = GetNodePar (lexems, index);
-        if (stack_lexem(*index)->type != L_CLOSING_BRACKET)
+
+        if (stack_lexem((*index)++)->type != L_CLOSING_BRACKET)
         {
             debug_print ("Syntax error: no closing bracket in args of func %s.\n", result->value.var);
             return nullptr;
         }
-
-        (*index)++;
     }
 
-    if (stack_lexem(*index)->type != L_BLOCK_START)
+    if (stack_lexem((*index)++)->type != L_BLOCK_START)
     {
         debug_print ("Syntax error: no '{' after function defining.\n");
         return nullptr;
     }
-
-    (*index)++;
 
     result->right = GetNodeBlock (lexems, index);
 
@@ -184,9 +176,7 @@ Node *GetNodePar (Stack *lexems, int *index)
 
     if (stack_lexem(*index)->type == L_VAR)
     {
-        result = tree_create_node (PAR, stack_lexem(*index)->value.var);
-
-        (*index)++;
+        result = tree_create_node (PAR, stack_lexem((*index)++)->value.var);
 
         result->right = GetNodePar (lexems, index);
     }
@@ -339,9 +329,7 @@ Node *GetNodeSeq (Stack *lexems, int *index)
 
 Node *GetNodeNvar (Stack *lexems, int *index)
 {
-    Node *result = tree_create_node (NVAR, stack_lexem(*index)->value.var);
-
-    (*index)++;
+    Node *result = tree_create_node (NVAR, stack_lexem((*index)++)->value.var);
 
     result->right = GetNodeE(lexems, index);
 
@@ -374,9 +362,7 @@ Node *GetNodeRet (Stack *lexems, int *index)
 
 Node *GetNodeCall (Stack *lexems, int *index)
 {
-    Node *result = tree_create_node (CALL, stack_lexem(*index)->value.var);
-
-    (*index)++;
+    Node *result = tree_create_node (CALL, stack_lexem((*index)++)->value.var);
 
     if (stack_lexem(*index)->type == L_STARTING_BRACKET)
     {
@@ -384,13 +370,11 @@ Node *GetNodeCall (Stack *lexems, int *index)
 
         result->right = GetNodeArg (lexems, index);
 
-        if (stack_lexem(*index)->type != L_CLOSING_BRACKET)
+        if (stack_lexem((*index)++)->type != L_CLOSING_BRACKET)
         {
             debug_print ("Syntax error: no closing bracket in args of func %s.\n", result->value.var);
             return nullptr;
         }
-
-        (*index)++;
     }
 
     return result;
@@ -426,13 +410,11 @@ Node *GetNodeIf (Stack *lexems, int *index)
         (*index)++;
         result->left = GetNodeE (lexems, index);
 
-        if (stack_lexem(*index)->type != L_CLOSING_BRACKET)
+        if (stack_lexem((*index)++)->type != L_CLOSING_BRACKET)
         {
             debug_print ("Syntax error: no closing bracket in 'if' condition %s.\n", result->value.var);
             return nullptr;
         }
-
-        (*index)++;
 
         result->right = GetNodeBranch (lexems, index);
     }
@@ -470,7 +452,7 @@ Node *GetNodeE (Stack *lexems, int *index)
         (*index)++;
 
         right_node = GetNodeT (lexems, index);
-
+//define do_op(op) result = op (result, right_node)??
         if (op == GT)
         {
             result = GT (result, right_node);
