@@ -50,6 +50,20 @@ Lexem **lexer (char *text, Stack *lexems)
                 lexem->type = L_CLOSING_BRACKET;
                 break;
             }
+            case '>':
+            {
+                lexem->type = L_OP;
+                lexem->value.op_val = GT;
+
+                break;
+            }
+            case '<':
+            {
+                lexem->type = L_OP;
+                lexem->value.op_val = LT;
+
+                break;
+            }
             case '{':
             {
                 lexem->type = L_BLOCK_START;
@@ -168,7 +182,7 @@ Lexem **lexer (char *text, Stack *lexems)
 
             if (!(isalpha (*(cur_smbl))))
             {
-                debug_print ("wrong variable name, %s", cur_smbl);
+                debug_print ("wrong variable name: {%s}.\n", cur_smbl);
                 return nullptr;
             }
 
@@ -195,7 +209,7 @@ Lexem **lexer (char *text, Stack *lexems)
 
             if (!(isalpha (*(cur_smbl))))
             {
-                debug_print ("wrong variable name, %s", cur_smbl);
+                debug_print ("wrong variable name: {%s}.\n", cur_smbl);
                 return nullptr;
             }
 
@@ -217,7 +231,7 @@ Lexem **lexer (char *text, Stack *lexems)
 
             if (!(isalpha (*(cur_smbl))))
             {
-                debug_print ("wrong func name, %s", cur_smbl);
+                debug_print ("wrong func name: {%s}.\n", cur_smbl);
                 return nullptr;
             }
 
@@ -257,8 +271,6 @@ Lexem **lexer (char *text, Stack *lexems)
         if (is_needed)
         {
             stack_push (lexems, lexem);
-            stack_push (lexems, lexem);
-            fprintf (stderr, "[%d]\n", ((Lexem *)stack_pop(lexems))->type);
         }
     }
 
@@ -370,7 +382,7 @@ void print_lexems (Stack *lexems, FILE *output_file)
         }
         default:
         {
-            debug_print ("Error: wrong command %d.\n", pop_lexem->type);
+            debug_print ("Error: wrong command {%d}.\n", pop_lexem->type);
             break;
         }
     }
