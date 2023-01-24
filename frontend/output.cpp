@@ -12,9 +12,50 @@
 /// hash (optional)
 
 static int char_index = 1;
+//static int var_index = 0;
 static int start_capacity = 10;
 
 static Stack names = {};
+
+Var *create_var (const char *var, const int index)
+{
+    Var *struct_var = (Var *)calloc (1, sizeof (Var));
+
+    strcpy (struct_var->data, var);
+    struct_var->index = index;
+
+    return struct_var;
+}
+
+void add_standart (Stack *global, FILE *output)
+{
+    assert (global);
+
+    int max_arg_num = 0;
+
+#define var(name, arg_num, code)                            \
+    Var *var_##name = create_var (#name, char_index++);     \
+    stack_push (global, var_##name);                        \
+                                                            \
+    fprintf (output, #name":\n");                           \
+    if (arg_num > max_arg_num)                              \
+    {                                                       \
+        max_arg_num = arg_num;                              \
+    }                                                       \
+    for (int i = arg_num; i > 0;)                           \
+    {                                                       \
+        fprintf (output, "pop [%d]\n", i--);                \
+    }                                                       \
+    for (int i = 0; i < arg_num;)                           \
+    {                                                       \
+        fprintf (output, "push [%d]\n", ++i);               \
+    }                                                       \
+    fprintf (output, code);
+#include "standart.h"
+#undef var
+
+    //var_index = max_arg_num;
+}
 
 bool add_struct (const char *var, Stack *block_names)
 {
@@ -29,15 +70,9 @@ bool add_struct (const char *var, Stack *block_names)
 
     if (!(index))
     {
-        Var *struct_var = (Var *)calloc (1, sizeof (Var));
-
-        strcpy (struct_var->data, var);
-        struct_var->index = char_index;
+        Var *struct_var = create_var (var, char_index++);
 
         stack_push (block_names, struct_var);
-
-        char_index++;
-        printf ("%s, %d\n", struct_var->data, char_index);
 
         return true;
     }
@@ -113,6 +148,7 @@ void print_tree (Tree *tree, FILE *output)
 
     stack_push (&names, &global_names);
 
+
     print_node (tree->root, output);
 
     stack_dtor (&global_names);
@@ -150,7 +186,8 @@ void print_def (Node *node, FILE *output)
         {
             if (is_first_func)
             {
-                fprintf (output, "call main\nout\nhlt\n");
+                fprintf (output, "call main\nout\nhlt\n\n");
+                add_standart ((Stack *)stack_get_token (&names, 0), output);
                 is_first_func = false;
             }
 
@@ -168,7 +205,7 @@ void print_def (Node *node, FILE *output)
 void print_nvar (Node *node, FILE *output, Stack *block_names)
 {
     add_struct (node->value.var, block_names);
-
+    //var_index++;
     print_expr (node->right, output);
 
     fprintf (output, "pop [%d] /*%s*/\n", char_index - 1, node->value.var);
@@ -250,6 +287,7 @@ void print_op (Node *node, FILE *output)
         }
     }
 }
+
 void print_var_val (Node *node, FILE *output)
 {
     int i = find_var (node->value.var);
