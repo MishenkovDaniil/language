@@ -280,32 +280,56 @@ int make_graph_nodes (Node *node, FILE *tgraph_file)
         {
             case DEFAULT:
             {
-                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"orange\","
-                                      " label = \"{parent = %p} | {DEFAULT}\"];\n\t", graph_num++, node->parent);
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"orange\", label = \"{parent = %p} "
+                                      "| {DEFAULT} | {L %p | R %p}}\"];\n\t", graph_num++, node->parent, node->left, node->right);
                 break;
             }
             case DEFS:
             {
-                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\","
-                                      " label = \"{parent = %p} | {DEFS}\"];\n\t", graph_num++, node->parent);
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{node %p | {parent = %p} "
+                                      "| {DEFS} | {L %p | R %p}}\"];\n\t", graph_num++, node, node->parent, node->left, node->right);
                 break;
             }
             case BLOCK:
             {
-                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\","
-                                      " label = \"{parent = %p} | {BLOCK}\"];\n\t", graph_num++, node->parent);
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{node %p | {parent = %p} "
+                                      "| {BLOCK} | {L %p | R %p}}\"];\n\t", graph_num++, node, node->parent, node->left, node->right);
+                break;
+            }
+            case BRANCH:
+            {
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{node %p | {parent = %p} "
+                                      "| {BRANCH} | {L %p | R %p}}\"];\n\t", graph_num++, node, node->parent, node->left, node->right);
                 break;
             }
             case SEQ:
             {
-                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{parent = %p} "
-                                        "| {SEQ}\"];\n\t", graph_num++, node->parent);
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{node %p | {parent = %p} "
+                                        "| {SEQ} | {L %p | R %p}}\"];\n\t", graph_num++, node, node->parent, node->left, node->right);
+                break;
+            }
+            case RET:
+            {
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{node %p | {parent = %p} "
+                                        "| {RET} | {L %p | R %p}}\"];\n\t", graph_num++, node, node->parent, node->left, node->right);
+                break;
+            }
+            case IF:
+            {
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{node %p | {parent = %p} "
+                                        "| {IF} | {L %p | R %p}}\"];\n\t", graph_num++, node, node->parent, node->left, node->right);
+                break;
+            }
+            case WHILE:
+            {
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{node %p | {parent = %p} "
+                                        "| {WHILE} | {L %p | R %p}}\"];\n\t", graph_num++, node, node->parent, node->left, node->right);
                 break;
             }
             case ASS:
             {
-                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{parent = %p} "
-                                        "| {ASS}\"];\n\t", graph_num++, node->parent);
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\", label = \"{node %p | {parent = %p} "
+                                        "| {ASS} | {L %p | R %p}}\"];\n\t", graph_num++, node, node->parent, node->left, node->right);
                 break;
             }
             case OP:
@@ -333,7 +357,7 @@ int make_graph_nodes (Node *node, FILE *tgraph_file)
 
                     default:
                     {
-                        printf ("Error: wrong node op type in %s", __PRETTY_FUNCTION__);
+                        printf ("Error: wrong node op type {%d} in %s", node->value.op_val, __PRETTY_FUNCTION__);
                         break;
                     }
 
@@ -355,6 +379,13 @@ int make_graph_nodes (Node *node, FILE *tgraph_file)
                                        graph_num++, node, node->parent, node->value.var, node->left, node->right);
                 break;
             }
+            case CALL:
+            {
+                fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\","
+                                      " label = \"{node %p | {parent = %p} | {CALL | %s} | {L %p | R %p}} \"];\n\t",
+                                       graph_num++, node, node->parent, node->value.var, node->left, node->right);
+                break;
+            }
             case PAR:
             {
                 fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\","
@@ -365,8 +396,8 @@ int make_graph_nodes (Node *node, FILE *tgraph_file)
             case ARG:
             {
                 fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\","
-                                      " label = \"{node %p | {parent = %p} | {ARG | %s} | {L %p | R %p}} \"];\n\t",
-                                       graph_num++, node, node->parent, node->value.var, node->left, node->right);
+                                      " label = \"{node %p | {parent = %p} | {ARG} | {L %p | R %p}} \"];\n\t",
+                                       graph_num++, node, node->parent, node->left, node->right);
                 break;
             }
             case NVAR:
@@ -385,7 +416,7 @@ int make_graph_nodes (Node *node, FILE *tgraph_file)
             }
             default:
             {
-                printf ("Error: wrong node type in %s", __PRETTY_FUNCTION__);
+                printf ("Error: wrong node type {%d} in %s", node->type, __PRETTY_FUNCTION__);
                 break;
             }
         }
