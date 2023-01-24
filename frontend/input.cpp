@@ -434,7 +434,6 @@ Node *GetNodeIf (Stack *lexems, int *index)
     if (stack_lexem(*index)->type == L_STARTING_BRACKET)
     {
         (*index)++;
-
         result->left = GetNodeE (lexems, index);
 
         if (stack_lexem(*index)->type != L_CLOSING_BRACKET)
