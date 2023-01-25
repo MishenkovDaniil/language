@@ -9,3 +9,4 @@
 - make "while" in input and asm
 - make NOT and NEG, AND and OR
 - fix frontend/operations.h with '<', '>',...
+- decide if jmp must pop 2 args or only last one
