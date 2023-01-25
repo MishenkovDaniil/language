@@ -11,6 +11,13 @@ DEF_OP (MUL, 3, *, 1, *, "", (node->left->type == TYPE_OP) &&
                                node->right->value.op_val == OP_SUB), "")
 DEF_OP (DIV, 4, /, 1, /, "\\frac{", 0, "}{", 0, "}")
 DEF_OP (DEG, 5, ^, 2, **, "", node->left->type == TYPE_OP, "^{", 0, "}")
+DEF_OP (GT, 9, gt, 1, >, "", node->left->type == TYPE_OP, ">", 0, "")
+DEF_OP (LT, 10, lt, 1, <, "", node->left->type == TYPE_OP, "<", 0, "")
+DEF_OP (LEQ, 10, leq, 2, <=, "", node->left->type == TYPE_OP, "<=", 0, "")
+DEF_OP (GEQ, 10, geq, 2, >=, "", node->left->type == TYPE_OP, ">=", 0, "")
+DEF_OP (EQ, 10, eq, 2, ==, "", node->left->type == TYPE_OP, "==", 0, "")
+DEF_OP (NEQ, 10, neq, 2, !=, "", node->left->type == TYPE_OP, "!=", 0, "")
+
 //DEF_OP (SIN, 6, sin, 3, sin, "\\sin(", 0, "", 0, ")")
 //DEF_OP (COS, 7, cos, 3, cos, "\\cos(", 0, "", 0, ")")
 //DEF_OP (LN, 8, ln, 2, ln,    "\\ln(", 0, "", 0, ")")
