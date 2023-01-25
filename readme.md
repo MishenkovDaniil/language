@@ -6,6 +6,6 @@
 - made pixel func
 - check if asm is right in all cases
 - make error if wrong arg number
-- make "while"
+- make "while" in input and asm
 - make NOT and NEG, AND and OR
-- update asm for if/while and '<', '>'...
+- fix frontend/operations.h with '<', '>',...
