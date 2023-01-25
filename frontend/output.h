@@ -14,7 +14,7 @@ Var *create_var (const char *var, const int index);
 
 void add_standart (Stack *global, FILE *output);
 
-bool add_struct   (const char *var, Stack *block_names = nullptr);
+bool add_struct   (const char *var, bool is_label, Stack *block_names = nullptr);
 int  find_var     (const char *var);
 int  find_stk_var (const char *var, Stack *block_names);
 bool is_my_var    (const char *var, int index, Stack *block_names);
