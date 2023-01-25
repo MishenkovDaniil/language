@@ -18,7 +18,7 @@ static int start_capacity = 10;
 
 static Stack names = {};
 
-const int POISON = 0xDEADBEFF;
+static const int L_POISON = 0xDEADBEFF;
 
 Var *create_var (const char *var, const int index)
 {
@@ -99,7 +99,7 @@ int find_var (const char *var)
     if (num_of_defs > 1)
     {
         printf ("Error: multiple definitions of \"%s\"", var);
-        return POISON;
+        return L_POISON;
     }
 
     return var_index;
@@ -496,7 +496,7 @@ void print_seq (Node *node, FILE *output, Stack *block_names)
         }
         case WHILE:
         {
-            //print_while (node, output);
+            print_while (node, output);
             break;
         }
         case RET:
@@ -552,8 +552,6 @@ void print_ret (Node *node, FILE *output)
 
 void print_if (Node *node, FILE *output)
 {
-    printf ("if\n");
-
     static unsigned int if_idx = 0;
 
     fprintf (output, "/*if_%d*/\n\n", if_idx);
@@ -565,9 +563,8 @@ void print_if (Node *node, FILE *output)
 
     print_branch (node->right->left, output);
 
-    fprintf (output, "if_end_%d:\n\n", if_idx++);
-
-    printf ("if end\n");
+    fprintf (output, "if_end_%d:\n\n", if_idx);
+    if_idx++;
 }
 
 void print_branch (Node *node, FILE *output)
@@ -579,3 +576,20 @@ void print_branch (Node *node, FILE *output)
     }
 }
 
+void print_while (Node *node, FILE *output)
+{
+    static unsigned int while_idx = 0;
+
+    fprintf (output, "/*while_start_%d*/\n\nwhile_start_%d:\n", while_idx, while_idx);
+
+    print_expr (node->left, output);
+
+    fprintf (output, "push 0\n"
+                     "je while_end_%d\n\n", while_idx, while_idx);
+
+    print_branch (node->right->left, output);
+
+    fprintf (output, "jmp while_start_%d\n"
+                     "while_end_%d:\n\n", while_idx, while_idx);
+    while_idx++;
+}
