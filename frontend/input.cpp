@@ -429,7 +429,31 @@ Node *GetNodeIf (Stack *lexems, int *index)
 
 Node *GetNodeWhile (Stack *lexems, int *index)
 {
-    return nullptr;
+    Node *result = tree_create_node (WHILE);
+
+    //result->value.var = stack_lexem(*index)->value.var;
+    (*index)++;
+
+    if (stack_lexem(*index)->type == L_STARTING_BRACKET)
+    {
+        (*index)++;
+        result->left = GetNodeE (lexems, index);
+
+        if (stack_lexem((*index)++)->type != L_CLOSING_BRACKET)
+        {
+            debug_print ("Syntax error: no closing bracket in 'while' condition %s.\n", result->value.var);
+            return nullptr;
+        }
+
+        result->right = GetNodeBranch (lexems, index);
+    }
+    else
+    {
+        printf ("Error: no while condition.\n");
+        return nullptr;
+    }
+
+    return result;
 }
 
 Node *GetNodeE (Stack *lexems, int *index)
