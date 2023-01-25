@@ -35,7 +35,7 @@ void add_standart (Stack *global, FILE *output)
     int max_arg_num = 0;
 
 #define var(name, arg_num, code)                            \
-    Var *var_##name = create_var (#name, 0);                \
+    Var *var_##name = create_var (#name, -1);               \
     stack_push (global, var_##name);                        \
                                                             \
     fprintf (output, #name":\n");                           \
@@ -63,7 +63,7 @@ bool add_struct (const char *var, bool is_label, Stack *block_names)
 
         if (is_label)
         {
-            struct_var = create_var (var, 0);
+            struct_var = create_var (var, -1);
         }
         else
         {
@@ -381,11 +381,10 @@ void print_arg (Node *node, FILE *output)
 
 void print_func (Node *node, FILE *output)
 {
-    printf ("func start %s\n", node->value.var);
     if (!(add_struct (node->value.var, true)))
     {
         //error
-        printf ("error.(%d)\n", __LINE__);
+        fprintf (stderr, "Syntax error: function '%s' declared more than once.\n", node->value.var);
         return;
     }
 
@@ -411,7 +410,6 @@ void print_func (Node *node, FILE *output)
 
     stack_pop (&names);
     stack_dtor (&func);
-    printf ("func end %s\n", node->value.var);
 }
 
 void print_par (Node *node, FILE *output, Stack *block_names)
@@ -463,7 +461,6 @@ void print_var (Node *node, FILE *output)
 
     fprintf (output, "push [%d] /*%s*/\n", i, node->value.var);
 }
-
 
 void print_seq (Node *node, FILE *output, Stack *block_names)
 {
@@ -583,3 +580,4 @@ void print_branch (Node *node, FILE *output)
         print_branch (node->right, output);
     }
 }
+
