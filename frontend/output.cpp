@@ -18,6 +18,8 @@ static int start_capacity = 10;
 
 static Stack names = {};
 
+const int POISON = 0xDEADBEFF;
+
 Var *create_var (const char *var, const int index)
 {
     Var *struct_var = (Var *)calloc (1, sizeof (Var));
@@ -74,10 +76,6 @@ bool add_struct (const char *var, bool is_label, Stack *block_names)
 
         return true;
     }
-    else if (index == -1)
-    {
-        return false;
-    }
 
     return false;
 }
@@ -101,7 +99,7 @@ int find_var (const char *var)
     if (num_of_defs > 1)
     {
         printf ("Error: multiple definitions of \"%s\"", var);
-        return -1;
+        return POISON;
     }
 
     return var_index;
