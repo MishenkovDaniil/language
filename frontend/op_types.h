@@ -13,6 +13,12 @@ enum Op_types
     AND = 7,
     OR  = 8,
     NOT = 9,
+    GT  = 10,
+    LT  = 11,
+    LEQ = 12,
+    GEQ = 13,
+    EQ  = 14,
+    NEQ = 15,
 };
 
 #endif /* OP_TYPES */
