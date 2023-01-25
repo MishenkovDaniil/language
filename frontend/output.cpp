@@ -5,6 +5,7 @@
 #include "tree.h"
 #include "output.h"
 #include "stack.h"
+#include "input.h"
 
 /// var
 /// index
@@ -208,7 +209,7 @@ void print_nvar (Node *node, FILE *output, Stack *block_names)
     //var_index++;
     print_expr (node->right, output);
 
-    fprintf (output, "pop [%d] /*%s*/\n", char_index - 1, node->value.var);
+    fprintf (output, "pop [%d] /*%s*/\n\n", char_index - 1, node->value.var);
 }
 
 void print_expr (Node *node, FILE *output)
@@ -255,6 +256,11 @@ void print_num (Node *node, FILE *output)
 
 void print_op (Node *node, FILE *output)
 {
+    static unsigned int compare_idx = 0;
+
+    const int MAX_COMP_LEN = 8;
+    const int MAX_COMP_END_LEN = 12;
+
     print_expr (node->left, output);
     print_expr (node->right, output);
 
@@ -262,24 +268,63 @@ void print_op (Node *node, FILE *output)
     {
         case ADD:
         {
-            fprintf (output, "add\n");
+            fprintf (output, "add\n\n");
             break;
         }
         case SUB:
         {
-            fprintf (output, "sub\n");
+            fprintf (output, "sub\n\n");
             break;
         }
         case MUL:
         {
-            fprintf (output, "mult\n");
+            fprintf (output, "mult\n\n");
             break;
         }
         case DIV:
         {
-            fprintf (output, "div\n");
+            fprintf (output, "div\n\n");
             break;
         }
+#define comp_case(comp_op, cmd)                                                                         \
+        case comp_op:                                                                                   \
+        {                                                                                               \
+            char comp[MAX_COMP_LEN] = "";                                                               \
+            char comp_end[MAX_COMP_END_LEN] = "";                                                       \
+                                                                                                        \
+            sprintf (comp, "comp_%d", compare_idx);                                                     \
+            sprintf (comp_end, "comp_end_%d", compare_idx);                                             \
+                                                                                                        \
+            while (!(find_var (comp) == 0 && find_var (comp_end) == 0))                                 \
+            {                                                                                           \
+                compare_idx++;                                                                          \
+                comp[0] = '\0';                                                                         \
+                comp_end[0] = '\0';                                                                     \
+                                                                                                        \
+                sprintf (comp, "comp_%d", compare_idx);                                                 \
+                sprintf (comp_end, "comp_end_%d", compare_idx);                                         \
+            }                                                                                           \
+                                                                                                        \
+            add_struct (comp);                                                                          \
+            add_struct (comp_end);                                                                      \
+                                                                                                        \
+            fprintf (output, #cmd" comp_%d\n"                                                           \
+                             "push 0\n"                                                                 \
+                             "jmp comp_end_%d\n\n"                                                        \
+                             "comp_%d:\n"                                                               \
+                             "push 1\n"                                                                 \
+                             "comp_end_%d:\n\n", compare_idx, compare_idx, compare_idx, compare_idx);     \
+            compare_idx++;                                                                              \
+            break;                                                                                      \
+        }
+
+        comp_case (LT, jb)
+        comp_case (GT, ja)
+        comp_case (LEQ, jbe)
+        comp_case (GEQ, jae)
+        comp_case (EQ, je)
+        comp_case (NEQ, jne)
+#undef comp_case
         default:
         {
             fprintf (output, "Error: unknown operation");
@@ -311,7 +356,7 @@ void print_var_val (Node *node, FILE *output)
 void print_call (Node *node, FILE *output)
 {
     print_arg (node->right, output);
-    fprintf (output, "call %s\n", node->value.var);
+    fprintf (output, "call %s\n\n", node->value.var);
 }
 
 void print_arg (Node *node, FILE *output)
@@ -335,7 +380,7 @@ void print_func (Node *node, FILE *output)
         return;
     }
 
-    fprintf (output, "\n%s:\n", node->value.var);
+    fprintf (output, "\n%s:\n\n", node->value.var);
 
     Stack func = {};
     stack_init (&func, start_capacity);
@@ -441,7 +486,7 @@ void print_seq (Node *node, FILE *output, Stack *block_names)
         }
         case IF:
         {
-            //print_if (node, output);
+            print_if (node, output);
             break;
         }
         case WHILE:
@@ -461,7 +506,7 @@ void print_seq (Node *node, FILE *output, Stack *block_names)
         }
         default:
         {
-            fprintf (stderr, "Error: unknown action");
+            debug_print ("Error: unknown action");
             break;
         }
     }
@@ -497,5 +542,30 @@ void print_ret (Node *node, FILE *output)
 {
     print_expr (node->right, output);
 
-    fprintf (output, "RET\n");
+    fprintf (output, "RET\n\n");
+}
+
+void print_if (Node *node, FILE *output)
+{
+    static unsigned int if_idx = 0;
+
+    fprintf (output, "/*if_%d*/\n\n", if_idx);
+
+    print_expr (node->left, output);
+
+    fprintf (output, "push 0\n"
+                     "je if_end_%d\n\n", if_idx, if_idx);
+
+    print_branch (node->right->left, output);
+
+    fprintf (output, "if_end_%d:\n\n", if_idx++);
+}
+
+void print_branch (Node *node, FILE *output)
+{
+    if (node && node->type == SEQ)
+    {
+        print_seq (node->left, output, (Stack *)stack_get_token (&names, 0));
+        print_branch (node->right, output);
+    }
 }

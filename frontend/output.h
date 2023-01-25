@@ -43,5 +43,7 @@ void print_var_val (Node *node, FILE *output);
 void print_num     (Node *node, FILE *output);
 
 void print_var (Node *node, FILE *output);
+void print_branch (Node *node, FILE *output);
+void print_if (Node *node, FILE *output);
 
 #endif /* OUTPUT_H */
