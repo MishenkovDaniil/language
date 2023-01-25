@@ -35,22 +35,10 @@ void add_standart (Stack *global, FILE *output)
     int max_arg_num = 0;
 
 #define var(name, arg_num, code)                            \
-    Var *var_##name = create_var (#name, char_index++);     \
+    Var *var_##name = create_var (#name, 0);                \
     stack_push (global, var_##name);                        \
                                                             \
     fprintf (output, #name":\n");                           \
-    if (arg_num > max_arg_num)                              \
-    {                                                       \
-        max_arg_num = arg_num;                              \
-    }                                                       \
-    for (int i = arg_num; i > 0;)                           \
-    {                                                       \
-        fprintf (output, "pop [%d]\n", i--);                \
-    }                                                       \
-    for (int i = 0; i < arg_num;)                           \
-    {                                                       \
-        fprintf (output, "push [%d]\n", ++i);               \
-    }                                                       \
     fprintf (output, code);
 #include "standart.h"
 #undef var
@@ -58,7 +46,7 @@ void add_standart (Stack *global, FILE *output)
     //var_index = max_arg_num;
 }
 
-bool add_struct (const char *var, Stack *block_names)
+bool add_struct (const char *var, bool is_label, Stack *block_names)
 {
     assert (var);
 
@@ -71,7 +59,16 @@ bool add_struct (const char *var, Stack *block_names)
 
     if (!(index))
     {
-        Var *struct_var = create_var (var, char_index++);
+        Var *struct_var = nullptr;
+
+        if (is_label)
+        {
+            struct_var = create_var (var, 0);
+        }
+        else
+        {
+            struct_var = create_var (var, char_index++);
+        }
 
         stack_push (block_names, struct_var);
 
@@ -205,7 +202,7 @@ void print_def (Node *node, FILE *output)
 
 void print_nvar (Node *node, FILE *output, Stack *block_names)
 {
-    add_struct (node->value.var, block_names);
+    add_struct (node->value.var, false, block_names);
     //var_index++;
     print_expr (node->right, output);
 
@@ -305,15 +302,15 @@ void print_op (Node *node, FILE *output)
                 sprintf (comp_end, "comp_end_%d", compare_idx);                                         \
             }                                                                                           \
                                                                                                         \
-            add_struct (comp);                                                                          \
-            add_struct (comp_end);                                                                      \
+            add_struct (comp, true);                                                                    \
+            add_struct (comp_end, true);                                                                \
                                                                                                         \
             fprintf (output, #cmd" comp_%d\n"                                                           \
                              "push 0\n"                                                                 \
-                             "jmp comp_end_%d\n\n"                                                        \
+                             "jmp comp_end_%d\n\n"                                                      \
                              "comp_%d:\n"                                                               \
                              "push 1\n"                                                                 \
-                             "comp_end_%d:\n\n", compare_idx, compare_idx, compare_idx, compare_idx);     \
+                             "comp_end_%d:\n\n", compare_idx, compare_idx, compare_idx, compare_idx);   \
             compare_idx++;                                                                              \
             break;                                                                                      \
         }
@@ -356,11 +353,22 @@ void print_var_val (Node *node, FILE *output)
 void print_call (Node *node, FILE *output)
 {
     print_arg (node->right, output);
+
+    //if (find_var(node->value.var) != 1)
+    //{
+      //  fprintf (stderr, "Error: func '%s' was not inited.\n", node->value.var);
+    //}
+
     fprintf (output, "call %s\n\n", node->value.var);
 }
 
 void print_arg (Node *node, FILE *output)
 {
+    if (!(node))
+    {
+        return;
+    }
+
     if (node->left)
     {
         print_expr (node->left, output);
@@ -373,7 +381,8 @@ void print_arg (Node *node, FILE *output)
 
 void print_func (Node *node, FILE *output)
 {
-    if (!(add_struct (node->value.var)))
+    printf ("func start %s\n", node->value.var);
+    if (!(add_struct (node->value.var, true)))
     {
         //error
         printf ("error.(%d)\n", __LINE__);
@@ -402,6 +411,7 @@ void print_func (Node *node, FILE *output)
 
     stack_pop (&names);
     stack_dtor (&func);
+    printf ("func end %s\n", node->value.var);
 }
 
 void print_par (Node *node, FILE *output, Stack *block_names)
@@ -411,7 +421,7 @@ void print_par (Node *node, FILE *output, Stack *block_names)
         return;
     }
 
-    if (!(add_struct (node->value.var, block_names)))
+    if (!(add_struct (node->value.var, false, block_names)))
     {
         return;
     }
@@ -547,6 +557,8 @@ void print_ret (Node *node, FILE *output)
 
 void print_if (Node *node, FILE *output)
 {
+    printf ("if\n");
+
     static unsigned int if_idx = 0;
 
     fprintf (output, "/*if_%d*/\n\n", if_idx);
@@ -559,6 +571,8 @@ void print_if (Node *node, FILE *output)
     print_branch (node->right->left, output);
 
     fprintf (output, "if_end_%d:\n\n", if_idx++);
+
+    printf ("if end\n");
 }
 
 void print_branch (Node *node, FILE *output)
