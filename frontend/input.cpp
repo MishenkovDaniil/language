@@ -625,7 +625,19 @@ Node *GetNodeP (Stack *lexems, int *index)
 
     if (!(result))
     {
-        debug_print ("Syntax error: no matching lexem.\n");
+        Lexem *debug_lexem = stack_lexem(*index);
+
+        fprintf (stderr, "Syntax error: no matching lexem, current lexem type is %d", debug_lexem->type);
+
+        if (debug_lexem->type == L_OP)
+        {
+            debug_print (", op type is {%d}.\n", debug_lexem->value.op_val);
+        }
+        else
+        {
+            debug_print (".\n");
+        }
+
         return nullptr;
     }
 
@@ -648,7 +660,16 @@ Node *GetNodeN (Stack *lexems, int *index)
     }
     else
     {
-        debug_print ("Error:not num in GetNum function %d.\n", cur_lexem->type);
+        debug_print ("Error:not num in GetNum function, lexem type is {%d}", cur_lexem->type);
+
+        if (cur_lexem->type == L_OP)
+        {
+            debug_print (", op type is {%d}.\n", cur_lexem->value.op_val);
+        }
+        else
+        {
+            debug_print (".\n");
+        }
     }
 
     return nullptr;
