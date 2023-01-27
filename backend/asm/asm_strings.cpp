@@ -34,8 +34,11 @@ int is_comment (char *cmd, char **text)
 
     if (strstr (cmd, "//"))
     {
-        *text = strchr (*text, '\n');
-        skip_spaces (text);
+        if (!(strchr (cmd, '\n')))
+        {
+            *text = strchr (*text, '\n');
+            skip_spaces (text);
+        }
 
         return_value = 1;
     }

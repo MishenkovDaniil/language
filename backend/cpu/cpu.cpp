@@ -58,7 +58,6 @@ int calc (Cpu *cpu, const int n_instr)
                 val_1 = POP;                                \
                 val_2 = POP;                                \
                                                             \
-                PUSH (val_2);                               \
                                                             \
                 if (val_2 sign val_1)                       \
                 {                                           \

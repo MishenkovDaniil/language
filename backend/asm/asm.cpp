@@ -24,6 +24,7 @@ int init_code (char *text, int *op_code, Label *label)
 
         sscanf (text, "%s%n", cmd, &temp);
 
+        printf ("%s, %d\n\n", cmd, temp);
         text += temp + 1;
         temp = 0;
 
@@ -180,10 +181,10 @@ int assemble_push_arg (char **text, int *op_code, int *ip, Label *label, int *la
         op_code[start_ip] |= ARG_REGISTR;
 
         #define DEF_REG(name, num)                  \
-        if (strcasecmp (reg, #name) == 0)              \
+        if (strcasecmp (reg, #name) == 0)           \
         {                                           \
             op_code[*ip] = name##_NUM;              \
-            printf ("push argument is "#name"\n");   \
+            printf ("push argument is "#name"\n");  \
         }                                           \
         else
 
@@ -240,7 +241,7 @@ void assemble_jmp_arg (char **text, int *op_code, int *ip, Label *label, int *la
 
     if (temp_label_index > 0)
     {
-        printf ("[%d]\n", label->value[temp_label_index - 1]);
+        printf ("label {%s} [%d]\n", jmp_name, label->value[temp_label_index - 1]);
 
         op_code[(*ip)++] = label->value[temp_label_index - 1];
     }
