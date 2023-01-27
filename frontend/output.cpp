@@ -554,17 +554,20 @@ void print_if (Node *node, FILE *output)
 {
     static unsigned int if_idx = 0;
 
-    fprintf (output, "/*if_%d*/\n\n", if_idx);
+    unsigned int cur_if_idx = if_idx;
+
+    fprintf (output, "/*if_%d*/\n\n", cur_if_idx);
+
+    if_idx++;
 
     print_expr (node->left, output);
 
     fprintf (output, "push 0\n"
-                     "je if_end_%d\n\n", if_idx, if_idx);
+                     "je if_end_%d\n\n", cur_if_idx, cur_if_idx);
 
     print_branch (node->right->left, output);
 
-    fprintf (output, "if_end_%d:\n\n", if_idx);
-    if_idx++;
+    fprintf (output, "if_end_%d:\n\n", cur_if_idx);
 }
 
 void print_branch (Node *node, FILE *output)
@@ -580,16 +583,19 @@ void print_while (Node *node, FILE *output)
 {
     static unsigned int while_idx = 0;
 
-    fprintf (output, "/*while_start_%d*/\n\nwhile_start_%d:\n", while_idx, while_idx);
+    unsigned int cur_while_idx = while_idx;
+
+    fprintf (output, "/*while_start_%d*/\n\nwhile_start_%d:\n", cur_while_idx, cur_while_idx);
+
+    while_idx++;
 
     print_expr (node->left, output);
 
     fprintf (output, "push 0\n"
-                     "je while_end_%d\n\n", while_idx, while_idx);
+                     "je while_end_%d\n\n", cur_while_idx, cur_while_idx);
 
     print_branch (node->right->left, output);
 
     fprintf (output, "jmp while_start_%d\n"
-                     "while_end_%d:\n\n", while_idx, while_idx);
-    while_idx++;
+                     "while_end_%d:\n\n", cur_while_idx, cur_while_idx);
 }
