@@ -321,6 +321,11 @@ void print_op (Node *node, FILE *output)
             fprintf (output, "neq\n");
             break;
         }
+        case NEG:
+        {
+            fprintf (output, "neg\n");
+            break;
+        }
         default:
         {
             fprintf (output, "Error: unknown operation");

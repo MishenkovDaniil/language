@@ -127,7 +127,22 @@ Lexem **lexer (char *text, Stack *lexems)
             case '-':
             {
                 lexem->type = L_OP;
-                lexem->value.op_val = SUB;
+
+                Lexem *prev_lexem = ltst_meaningful_lxm (lexems);
+
+                if (!(prev_lexem))
+                {
+                    lexem->value.op_val = NEG;
+                }
+                else if (prev_lexem->type == L_OP || prev_lexem->type == L_NVAR || prev_lexem->type == L_ASS)
+                {
+                    lexem->value.op_val = NEG;
+                }
+                else
+                {
+                    lexem->value.op_val = SUB;
+                }
+
                 break;
             }
             case '*':
@@ -455,4 +470,28 @@ void print_lexems (Stack *lexems, FILE *output_file)
         }
     }
     fflush (output_file);
+}
+
+Lexem *ltst_meaningful_lxm (Stack *lexems)
+{
+    if (!(lexems->size))
+    {
+        return nullptr;
+    }
+
+    Lexem *prev_lexem = (Lexem *)stack_pop (lexems);
+
+    Lexem *result = prev_lexem;
+
+    if (prev_lexem->type == L_STARTING_BRACKET ||
+        prev_lexem->type == L_CLOSING_BRACKET  ||
+        prev_lexem->type == L_BLOCK_END        ||
+        prev_lexem->type == L_BLOCK_START)
+    {
+        result = ltst_meaningful_lxm (lexems);
+    }
+
+    stack_push (lexems, prev_lexem);
+
+    return result;
 }

@@ -56,6 +56,7 @@
 #define NEQ(left_node, right_node)      tree_create_node (OP, "NEQ", left_node, right_node)
 #define AND(left_node, right_node)      tree_create_node (OP, "AND", left_node, right_node)
 #define OR(left_node, right_node)       tree_create_node (OP, "OR",  left_node, right_node)
+#define NEG(left_node, right_node)      tree_create_node (OP, "NEG", left_node, right_node)
 //#define SIN(node)                       tree_create_node (OP, "SIN", nullptr, node)
 //#define COS(node)                       tree_create_node (OP, "COS", nullptr, node)
 
@@ -609,7 +610,7 @@ Node *GetNodeT (Stack *lexems, int *index)
 
 Node *GetNodeD (Stack *lexems, int *index)
 {
-    Node *result = GetNodeP (lexems, index);
+    Node *result = GetNodeUnary (lexems, index);
     Node *right_node = nullptr;
 
     Lexem *cur_lexem = stack_lexem(*index);
@@ -619,11 +620,42 @@ Node *GetNodeD (Stack *lexems, int *index)
     {
         (*index)++;
 
-        right_node = GetNodeP (lexems, index);
+        right_node = GetNodeUnary (lexems, index);
 
         result = DEG (result, right_node);
 
         cur_lexem = stack_lexem(*index);
+    }
+
+    return result;
+}
+
+Node *GetNodeUnary (Stack *lexems, int *index)
+{
+    Node *result = nullptr;
+
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    if (!(cur_lexem->type == L_OP &&
+          cur_lexem->value.op_val == NEG))
+    {
+        result = GetNodeP (lexems, index);
+    }
+    else
+    {
+        Node *right_node = nullptr;
+
+        if (cur_lexem->type == L_OP &&
+            cur_lexem->value.op_val == NEG)
+        {
+            (*index)++;
+
+            right_node = GetNodeP (lexems, index);
+
+            result = NEG (nullptr, right_node);
+
+            cur_lexem = stack_lexem(*index);
+        }
     }
 
     return result;
@@ -695,7 +727,7 @@ Node *GetNodeN (Stack *lexems, int *index)
     }
     else
     {
-        debug_print ("Error:not num in GetNum function, lexem type is {%d}", cur_lexem->type);
+        fprintf (stderr, "Error:not num in GetNum function, lexem type is {%d}", cur_lexem->type);
 
         if (cur_lexem->type == L_OP)
         {

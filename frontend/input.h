@@ -15,7 +15,7 @@ do                                                                              
 void skip_spaces (char **str);
 Lexem **lexer (char *text, Stack *lexems);
 void print_lexems (Stack *lexems, FILE *output_file);
-
+Lexem *ltst_meaningful_lxm (Stack *lexems);
 
 Node *tree_fill (Tree *tree, Stack *lexems);
 Node *GetNodeG (Tree *tree, Stack *lexems);
@@ -40,6 +40,7 @@ Node *GetNodeComp (Stack *lexems, int *index);
 Node *GetNodeF (Stack *lexems, int *index);
 Node *GetNodeT (Stack *lexems, int *index);
 Node *GetNodeD (Stack *lexems, int *index);
+Node *GetNodeUnary (Stack *lexems, int *index);
 Node *GetNodeP (Stack *lexems, int *index);
 Node *GetNodeN (Stack *lexems, int *index);
 Node *GetNodeV (Stack *lexems, int *index);
