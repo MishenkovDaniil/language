@@ -281,6 +281,16 @@ void print_op (Node *node, FILE *output)
             fprintf (output, "div\n\n");
             break;
         }
+        case AND:
+        {
+            fprintf (output, "and\n\n");
+            break;
+        }
+        case OR:
+        {
+            fprintf (output, "or\n\n");
+            break;
+        }
 #define comp_case(comp_op, cmd)                                                                         \
         case comp_op:                                                                                   \
         {                                                                                               \
