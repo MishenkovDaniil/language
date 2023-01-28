@@ -158,6 +158,7 @@ int assemble_push_arg (char **text, int *op_code, int *ip, Label *label, int *la
 
         if (**text == '+')
         {
+            printf ("register\n");
             (*text)++;
             skip_spaces (text);
 
@@ -167,7 +168,7 @@ int assemble_push_arg (char **text, int *op_code, int *ip, Label *label, int *la
         printf ("push/pop arg = {%d}\n", val);
     }
     if ((sscanf (*text, "%s%n", reg, &temp))
-        && (((op_code[start_ip] & ARG_MEM > 0) && *text < end_cmd)
+        && ((((op_code[start_ip] & ARG_MEM) > 0) && *text < end_cmd)
         || (!(op_code[start_ip] & ARG_IMMED))))
     {
         if (!(isalpha (**text)))
@@ -183,7 +184,7 @@ int assemble_push_arg (char **text, int *op_code, int *ip, Label *label, int *la
         #define DEF_REG(name, num)                  \
         if (strcasecmp (reg, #name) == 0)           \
         {                                           \
-            op_code[*ip] = name##_NUM;              \
+            op_code[*ip] = num;                     \
             printf ("push argument is "#name"\n");  \
         }                                           \
         else
