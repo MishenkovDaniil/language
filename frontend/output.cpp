@@ -263,73 +263,64 @@ void print_op (Node *node, FILE *output)
     {
         case ADD:
         {
-            fprintf (output, "add\n\n");
+            fprintf (output, "add\n");
             break;
         }
         case SUB:
         {
-            fprintf (output, "sub\n\n");
+            fprintf (output, "sub\n");
             break;
         }
         case MUL:
         {
-            fprintf (output, "mult\n\n");
+            fprintf (output, "mult\n");
             break;
         }
         case DIV:
         {
-            fprintf (output, "div\n\n");
+            fprintf (output, "div\n");
             break;
         }
         case AND:
         {
-            fprintf (output, "and\n\n");
+            fprintf (output, "and\n");
             break;
         }
         case OR:
         {
-            fprintf (output, "or\n\n");
+            fprintf (output, "or\n");
             break;
         }
-#define comp_case(comp_op, cmd)                                                                         \
-        case comp_op:                                                                                   \
-        {                                                                                               \
-            char comp[MAX_COMP_LEN] = "";                                                               \
-            char comp_end[MAX_COMP_END_LEN] = "";                                                       \
-                                                                                                        \
-            sprintf (comp, "comp_%d", compare_idx);                                                     \
-            sprintf (comp_end, "comp_end_%d", compare_idx);                                             \
-                                                                                                        \
-            while (!(find_var (comp) == 0 && find_var (comp_end) == 0))                                 \
-            {                                                                                           \
-                compare_idx++;                                                                          \
-                comp[0] = '\0';                                                                         \
-                comp_end[0] = '\0';                                                                     \
-                                                                                                        \
-                sprintf (comp, "comp_%d", compare_idx);                                                 \
-                sprintf (comp_end, "comp_end_%d", compare_idx);                                         \
-            }                                                                                           \
-                                                                                                        \
-            add_struct (comp, true);                                                                    \
-            add_struct (comp_end, true);                                                                \
-                                                                                                        \
-            fprintf (output, #cmd" comp_%d\n"                                                           \
-                             "push 0\n"                                                                 \
-                             "jmp comp_end_%d\n\n"                                                      \
-                             "comp_%d:\n"                                                               \
-                             "push 1\n"                                                                 \
-                             "comp_end_%d:\n\n", compare_idx, compare_idx, compare_idx, compare_idx);   \
-            compare_idx++;                                                                              \
-            break;                                                                                      \
+        case LT:
+        {
+            fprintf (output, "lt\n");
+            break;
         }
-
-        comp_case (LT, jb)
-        comp_case (GT, ja)
-        comp_case (LEQ, jbe)
-        comp_case (GEQ, jae)
-        comp_case (EQ, je)
-        comp_case (NEQ, jne)
-#undef comp_case
+        case GT:
+        {
+            fprintf (output, "gt\n");
+            break;
+        }
+        case GEQ:
+        {
+            fprintf (output, "geq\n");
+            break;
+        }
+        case LEQ:
+        {
+            fprintf (output, "leq\n");
+            break;
+        }
+        case EQ:
+        {
+            fprintf (output, "eq\n");
+            break;
+        }
+        case NEQ:
+        {
+            fprintf (output, "neq\n");
+            break;
+        }
         default:
         {
             fprintf (output, "Error: unknown operation");
