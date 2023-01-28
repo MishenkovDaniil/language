@@ -90,3 +90,13 @@ DEF_CMD(SQRT, 20, 0, push,
 
     PUSH((int)round((float)be / 100.0));
 })
+
+DEF_CMD (AND, 21, 0, push,
+{
+    stack_push (&(STACK), (POP) && (POP));
+})
+
+DEF_CMD (OR, 22, 0, push,
+{
+    stack_push (&(STACK), (POP) || (POP));
+})
