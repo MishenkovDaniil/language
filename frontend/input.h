@@ -36,6 +36,7 @@ Node *GetNodeRet (Stack *lexems, int *index);
 Node *GetNodeArg (Stack *lexems, int *index);
 
 Node *GetNodeE (Stack *lexems, int *index);
+Node *GetNodeComp (Stack *lexems, int *index);
 Node *GetNodeF (Stack *lexems, int *index);
 Node *GetNodeT (Stack *lexems, int *index);
 Node *GetNodeD (Stack *lexems, int *index);

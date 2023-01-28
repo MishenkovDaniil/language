@@ -48,12 +48,14 @@
 #define MUL(left_node, right_node)      tree_create_node (OP, "MUL", left_node, right_node)
 #define DIV(left_node, right_node)      tree_create_node (OP, "DIV", left_node, right_node)
 #define DEG(left_node, right_node)      tree_create_node (OP, "DEG", left_node, right_node)
-#define GT(left_node, right_node)       tree_create_node (OP, "GT", left_node, right_node)
-#define LT(left_node, right_node)       tree_create_node (OP, "LT", left_node, right_node)
+#define GT(left_node, right_node)       tree_create_node (OP, "GT",  left_node, right_node)
+#define LT(left_node, right_node)       tree_create_node (OP, "LT",  left_node, right_node)
 #define LEQ(left_node, right_node)      tree_create_node (OP, "LEQ", left_node, right_node)
 #define GEQ(left_node, right_node)      tree_create_node (OP, "GEQ", left_node, right_node)
-#define EQ(left_node, right_node)       tree_create_node (OP, "EQ", left_node, right_node)
+#define EQ(left_node, right_node)       tree_create_node (OP, "EQ",  left_node, right_node)
 #define NEQ(left_node, right_node)      tree_create_node (OP, "NEQ", left_node, right_node)
+#define AND(left_node, right_node)      tree_create_node (OP, "AND", left_node, right_node)
+#define OR(left_node, right_node)       tree_create_node (OP, "OR",  left_node, right_node)
 //#define SIN(node)                       tree_create_node (OP, "SIN", nullptr, node)
 //#define COS(node)                       tree_create_node (OP, "COS", nullptr, node)
 
@@ -458,7 +460,40 @@ Node *GetNodeWhile (Stack *lexems, int *index)
 
 Node *GetNodeE (Stack *lexems, int *index)
 {
-    Node *result = GetNodeF (lexems, index);
+    Node *result = GetNodeComp (lexems, index);
+    Node *right_node = nullptr;
+
+    Lexem *cur_lexem = stack_lexem(*index);
+
+    while (cur_lexem->type == L_OP &&
+          (cur_lexem->value.op_val == AND ||
+           cur_lexem->value.op_val == OR  ))
+    {
+        Op_types op = cur_lexem->value.op_val;
+
+        (*index)++;
+
+        right_node = GetNodeComp (lexems, index);
+
+        if (op == AND)
+        {
+            result = AND (result, right_node);
+        }
+        else
+        {
+            result = OR (result, right_node);
+        }
+
+        cur_lexem = stack_lexem(*index);
+    }
+
+    return result;
+
+}
+
+Node *GetNodeComp (Stack *lexems, int *index)
+{
+     Node *result = GetNodeF (lexems, index);
     Node *right_node = nullptr;
 
     Lexem *cur_lexem = stack_lexem(*index);
@@ -475,7 +510,7 @@ Node *GetNodeE (Stack *lexems, int *index)
 
         (*index)++;
 
-        right_node = GetNodeT (lexems, index);
+        right_node = GetNodeF (lexems, index);
 //define do_op(op) result = op (result, right_node)??
         if (op == GT)
         {
