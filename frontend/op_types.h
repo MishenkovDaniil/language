@@ -19,6 +19,7 @@ enum Op_types
     GEQ = 13,
     EQ  = 14,
     NEQ = 15,
+    NEG = 16,
 };
 
 #endif /* OP_TYPES */
