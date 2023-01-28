@@ -28,23 +28,25 @@ void print_nvar    (Node *node, FILE *output, Stack *block_names = nullptr);
 void print_func    (Node *node, FILE *output);
 
 void print_par     (Node *node, FILE *output, Stack *block_names);
-void print_arg     (Node *node, FILE *output);
+void print_arg     (Node *node, FILE *output, Stack *block_names);
 
 void print_block   (Node *node, FILE *output, Stack *block_names);
 void print_seq     (Node *node, FILE *output, Stack *block_names);
 
-void print_ass     (Node *node, FILE *output);
-void print_call    (Node *node, FILE *output);
-void print_ret     (Node *node, FILE *output);
+void print_ass     (Node *node, FILE *output, Stack *block_names = nullptr);
+void print_call    (Node *node, FILE *output, Stack *block_names);
+void print_ret     (Node *node, FILE *output, Stack *block_names);
 
-void print_expr    (Node *node, FILE *output);
-void print_op      (Node *node, FILE *output);
-void print_var_val (Node *node, FILE *output);
+void print_expr    (Node *node, FILE *output, Stack *block_names);
+void print_op      (Node *node, FILE *output, Stack *block_names);
+void print_var_val (Node *node, FILE *output, Stack *block_names);
 void print_num     (Node *node, FILE *output);
 
-void print_var (Node *node, FILE *output);
-void print_branch (Node *node, FILE *output);
-void print_if (Node *node, FILE *output);
-void print_while (Node *node, FILE *output);
+void print_var (Node *node, FILE *output, Stack *block_names = nullptr);
+void print_branch (Node *node, FILE *output, Stack *block_names);
+void print_if (Node *node, FILE *output, Stack *block_names);
+void print_while (Node *node, FILE *output, Stack *block_names);
+
+void print_var_idx (int index, Stack *block_names, FILE *output, const char *var);;
 
 #endif /* OUTPUT_H */

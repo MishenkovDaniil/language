@@ -12,6 +12,8 @@
 /// shift otn RBP
 /// hash (optional)
 
+#define global_stk (Stack *)stack_get_token (&names, 0)
+
 static int char_index = 1;
 //static int var_index = 0;
 static int start_capacity = 10;
@@ -182,7 +184,11 @@ void print_def (Node *node, FILE *output)
         {
             if (is_first_func)
             {
-                fprintf (output, "call main\nout\nhlt\n\n");
+                fprintf (output, "push 0\n"
+                                 "pop RAX\n"
+                                 "call main\n"
+                                 "out\n"
+                                 "hlt\n\n");
                 add_standart ((Stack *)stack_get_token (&names, 0), output);
                 is_first_func = false;
             }
@@ -202,12 +208,14 @@ void print_nvar (Node *node, FILE *output, Stack *block_names)
 {
     add_struct (node->value.var, false, block_names);
     //var_index++;
-    print_expr (node->right, output);
+    print_expr (node->right, output, block_names);
 
-    fprintf (output, "pop [%d] /*%s*/\n\n", char_index - 1, node->value.var);
+    fprintf (output, "pop ");
+    print_var_idx (char_index - 1, block_names, output, node->value.var);
+    //fprintf (output, "pop [%d] /*%s*/\n\n", char_index - 1, node->value.var);
 }
 
-void print_expr (Node *node, FILE *output)
+void print_expr (Node *node, FILE *output, Stack *block_names)
 {
     if (!(node))
     {
@@ -223,17 +231,17 @@ void print_expr (Node *node, FILE *output)
         }
         case OP:
         {
-            print_op (node, output);
+            print_op (node, output, block_names);
             break;
         }
         case VAR:
         {
-            print_var_val (node, output);
+            print_var_val (node, output, block_names);
             break;
         }
         case CALL:
         {
-            print_call (node, output);
+            print_call (node, output, block_names);
             break;
         }
         default:
@@ -249,15 +257,15 @@ void print_num (Node *node, FILE *output)
     fprintf (output, "push %d\n", (int)node->value.dbl_val);
 }
 
-void print_op (Node *node, FILE *output)
+void print_op (Node *node, FILE *output, Stack *block_names)
 {
     static unsigned int compare_idx = 0;
 
     const int MAX_COMP_LEN = 8;
     const int MAX_COMP_END_LEN = 12;
 
-    print_expr (node->left, output);
-    print_expr (node->right, output);
+    print_expr (node->left, output, block_names);
+    print_expr (node->right, output, block_names);
 
     switch (node->value.op_val)
     {
@@ -334,7 +342,7 @@ void print_op (Node *node, FILE *output)
     }
 }
 
-void print_var_val (Node *node, FILE *output)
+void print_var_val (Node *node, FILE *output, Stack *block_names)
 {
     int i = find_var (node->value.var);
 
@@ -349,24 +357,34 @@ void print_var_val (Node *node, FILE *output)
         return;
     }
 
-    fprintf (output, "push [%d] /*%s*/\n", i, node->value.var);
+    fprintf (output, "push ");
+    print_var_idx (i, block_names, output, node->value.var);
+    //fprintf (output, "push [%d] /*%s*/\n", i, node->value.var);
     //fprintf (output, "dup\n");
     //fprintf (output, "pop [%d] /*%s*/\n", i, node->value.var);
 }
 
-void print_call (Node *node, FILE *output)
+void print_call (Node *node, FILE *output, Stack *block_names)
 {
-    print_arg (node->right, output);
+    print_arg (node->right, output, block_names);
 
     //if (find_var(node->value.var) != 1)
     //{
       //  fprintf (stderr, "Error: func '%s' was not inited.\n", node->value.var);
     //}
 
-    fprintf (output, "call %s\n\n", node->value.var);
+    fprintf (output, "push %d\n"
+                     "push RAX\n"
+                     "add\n"
+                     "pop RAX\n\n"
+                     "call %s\n\n"
+                     "push RAX\n"
+                     "push %d\n"
+                     "sub\n"
+                     "pop RAX\n", char_index - 1, node->value.var, char_index - 1);
 }
 
-void print_arg (Node *node, FILE *output)
+void print_arg (Node *node, FILE *output, Stack *block_names)
 {
     if (!(node))
     {
@@ -375,11 +393,11 @@ void print_arg (Node *node, FILE *output)
 
     if (node->left)
     {
-        print_expr (node->left, output);
+        print_expr (node->left, output, block_names);
     }
     if (node->right)
     {
-        print_arg (node->right, output);
+        print_arg (node->right, output, block_names);
     }
 }
 
@@ -433,7 +451,7 @@ void print_par (Node *node, FILE *output, Stack *block_names)
     print_par (node->right, output, block_names);
 //    int i = find_var (node->value.var);//?? works??
 
-    fprintf (output, "pop [%d] /*%s*/\n", i, node->value.var);//i?
+    fprintf (output, "pop [%d + RAX] /*%s*/\n", i, node->value.var);//i?
 }
 
 void print_block (Node *node, FILE *output, Stack *block_names)
@@ -448,7 +466,7 @@ void print_block (Node *node, FILE *output, Stack *block_names)
     }
 }
 
-void print_var (Node *node, FILE *output)
+void print_var (Node *node, FILE *output, Stack *block_names)
 {
     int i = find_var (node->value.var);
 
@@ -463,7 +481,9 @@ void print_var (Node *node, FILE *output)
         return;
     }
 
-    fprintf (output, "push [%d] /*%s*/\n", i, node->value.var);
+    fprintf (output, "push");
+    print_var_idx (i, block_names, output, node->value.var);
+    //fprintf (output, "push [%d] /*%s*/\n", i, node->value.var);
 }
 
 void print_seq (Node *node, FILE *output, Stack *block_names)
@@ -487,32 +507,32 @@ void print_seq (Node *node, FILE *output, Stack *block_names)
         }
         case ASS:
         {
-            print_ass (node, output);
+            print_ass (node, output, block_names);
             break;
         }
         case VAR:
         {
-            print_var (node, output);
+            print_var (node, output, block_names);
             break;
         }
         case IF:
         {
-            print_if (node, output);
+            print_if (node, output, block_names);
             break;
         }
         case WHILE:
         {
-            print_while (node, output);
+            print_while (node, output, block_names);
             break;
         }
         case RET:
         {
-            print_ret (node, output);
+            print_ret (node, output, block_names);
             break;
         }
         case CALL:
         {
-            print_call (node, output);
+            print_call (node, output, block_names);
             break;
         }
         default:
@@ -523,9 +543,9 @@ void print_seq (Node *node, FILE *output, Stack *block_names)
     }
 }
 
-void print_ass (Node *node, FILE *output)
+void print_ass (Node *node, FILE *output, Stack *block_names)
 {
-    print_expr (node->right, output);
+    print_expr (node->right, output, block_names);
 
     if (!(node->left))
     {
@@ -546,17 +566,19 @@ void print_ass (Node *node, FILE *output)
         return;
     }
 
-    fprintf (output, "pop [%d] /*%s*/\n", i, node->left->value.var);
+    fprintf (output, "pop ");
+    print_var_idx (i, block_names, output, node->left->value.var);
+    //fprintf (output, "pop [%d] /*%s*/\n", i, node->left->value.var);
 }
 
-void print_ret (Node *node, FILE *output)
+void print_ret (Node *node, FILE *output, Stack *block_names)
 {
-    print_expr (node->right, output);
+    print_expr (node->right, output, block_names);
 
     fprintf (output, "RET\n\n");
 }
 
-void print_if (Node *node, FILE *output)
+void print_if (Node *node, FILE *output, Stack *block_names)
 {
     static unsigned int if_idx = 0;
 
@@ -566,26 +588,26 @@ void print_if (Node *node, FILE *output)
 
     if_idx++;
 
-    print_expr (node->left, output);
+    print_expr (node->left, output, block_names);
 
     fprintf (output, "push 0\n"
                      "je if_end_%d\n\n", cur_if_idx, cur_if_idx);
 
-    print_branch (node->right->left, output);
+    print_branch (node->right->left, output, block_names);
 
     fprintf (output, "if_end_%d:\n\n", cur_if_idx);
 }
 
-void print_branch (Node *node, FILE *output)
+void print_branch (Node *node, FILE *output, Stack *block_names)
 {
     if (node && node->type == SEQ)
     {
-        print_seq (node->left, output, (Stack *)stack_get_token (&names, 0));
-        print_branch (node->right, output);
+        print_seq (node->left, output, block_names);
+        print_branch (node->right, output, block_names);
     }
 }
 
-void print_while (Node *node, FILE *output)
+void print_while (Node *node, FILE *output, Stack *block_names)
 {
     static unsigned int while_idx = 0;
 
@@ -595,13 +617,34 @@ void print_while (Node *node, FILE *output)
 
     while_idx++;
 
-    print_expr (node->left, output);
+    print_expr (node->left, output, block_names);
 
     fprintf (output, "push 0\n"
                      "je while_end_%d\n\n", cur_while_idx, cur_while_idx);
 
-    print_branch (node->right->left, output);
+    print_branch (node->right->left, output, block_names);
 
     fprintf (output, "jmp while_start_%d\n"
                      "while_end_%d:\n\n", cur_while_idx, cur_while_idx);
+}
+
+void print_var_idx (int index, Stack *block_names, FILE *output, const char *var)
+{
+    if (block_names != nullptr && block_names != global_stk)
+    {
+        fprintf (output, "[%d + RAX]", index);
+    }
+    else
+    {
+        fprintf (output, "[%d]", index);
+    }
+
+    if (var)
+    {
+        fprintf (output, " /*%s*/\n", var);
+    }
+    else
+    {
+        fprintf (output, "\n");
+    }
 }
