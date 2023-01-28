@@ -100,3 +100,28 @@ DEF_CMD (OR, 22, 0, push,
 {
     stack_push (&(STACK), (POP) || (POP));
 })
+
+DEF_CMD (LT, 23, 0, push,
+{
+    stack_push (&(STACK), (POP) < (POP));
+})
+DEF_CMD (GT, 24, 0, push,
+{
+    stack_push (&(STACK), (POP) > (POP));
+})
+DEF_CMD (EQ, 25, 0, push,
+{
+    stack_push (&(STACK), (POP) == (POP));
+})
+DEF_CMD (NEQ, 26, 0, push,
+{
+    stack_push (&(STACK), (POP) != (POP));
+})
+DEF_CMD (GEQ, 27, 0, push,
+{
+    stack_push (&(STACK), (POP) >= (POP));
+})
+DEF_CMD (LEQ, 28, 0, push,
+{
+    stack_push (&(STACK), (POP) <= (POP));
+})
