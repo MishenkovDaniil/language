@@ -107,7 +107,7 @@ DEF_CMD (LT, 23, 0, push,
 {
     val_1 = POP;
 
-    stack_push (&(STACK), (POP) < (POP));
+    stack_push (&(STACK), (POP) < val_1);
 })
 DEF_CMD (GT, 24, 0, push,
 {
