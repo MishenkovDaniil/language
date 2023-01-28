@@ -82,6 +82,32 @@ Lexem **lexer (char *text, Stack *lexems)
 
                 break;
             }
+            case '&':
+            {
+                if (*(cur_smbl++) != '&')
+                {
+                    debug_print ("unknow operation '&', text now is [%s]", cur_smbl - 1);
+                    return nullptr;
+                }
+
+                lexem->type = L_OP;
+                lexem->value.op_val = AND;
+
+                break;
+            }
+            case '|':
+            {
+                if (*(cur_smbl++) != '|')
+                {
+                    debug_print ("unknow operation '|', text now is [%s]", cur_smbl - 1);
+                    return nullptr;
+                }
+
+                lexem->type = L_OP;
+                lexem->value.op_val = OR;
+
+                break;
+            }
             case '{':
             {
                 lexem->type = L_BLOCK_START;
