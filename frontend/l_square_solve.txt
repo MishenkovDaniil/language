@@ -1,0 +1,85 @@
+NFUNC solve_square(a, b, c)
+{
+    if ((a == 0 && b == 0 && c != 0) || (b == 0 && c > 0))
+    {
+        CALL print (666);
+        return 0;
+    }
+
+    if (a == 0)
+    {
+        CALL solve_linear (b, c);
+        return 0;
+    }
+    if (b == 0)
+    {
+        CALL solve_quadro (a, c);
+        return 0;
+    }
+    if (c == 0)
+    {
+        CALL print (0);
+        CALL solve_linear (a, b);
+        return 0;
+    }
+
+    NVAR discr = b*b - 4*a*c;
+
+    if (discr < 0)
+    {
+        CALL print (666);
+        return 0;
+    }
+
+    NVAR d_root = CALL sqrt (discr);
+
+    NVAR root_1 = (0 - b + d_root)/(2*a);
+    NVAR root_2 = (0 - b - d_root)/(2*a);
+
+    CALL print (root_1);
+    CALL print (root_2);
+
+    return 0;
+}
+
+NFUNC solve_linear (b, c)
+{
+    if (b == 0 && c == 0)
+    {
+        CALL print (888);
+        return 0;
+    }
+
+    NVAR root = (0 - c)/b;
+
+    CALL print (root);
+
+    return 0;
+}
+
+NFUNC solve_quadro (a, c)
+{
+    if (c == 0)
+    {
+        CALL print (0);
+        return 0;
+    }
+
+    NVAR root = CALL sqrt  (0 - c/a);
+
+    CALL print (root);
+    CALL print (0 - root);
+
+    return 0;
+}
+
+NFUNC main ()
+{
+    NVAR a = CALL read();
+    NVAR b = CALL read();
+    NVAR c = CALL read();
+
+    CALL solve_square (a, b, c);
+
+    return 0;
+}
