@@ -1,0 +1,31 @@
+NVAR global = 5;
+
+NFUNC factorial(x)
+{
+    NVAR res = x;
+
+    if (x < 0)
+    {
+        return 0;
+    }
+    if (x == 1 || x == 0)
+    {
+        return 1;
+    }
+    if (x > 1)
+    {
+        res = res*CALL factorial (x - 1);
+    }
+
+    return res;
+}
+
+NFUNC main ()
+{
+    NVAR a2 = CALL read();
+
+    a2 = CALL factorial (a2);
+    CALL print (a2);
+
+    return 0;
+}
