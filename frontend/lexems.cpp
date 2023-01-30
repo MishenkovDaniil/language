@@ -16,6 +16,8 @@ void skip_spaces (char **str)
     }
 }
 
+static const int MAX_NAME_L = 20;
+
 Lexem **lexer (char *text, Stack *lexems)
 {
     int shift = 0;
@@ -269,7 +271,7 @@ Lexem **lexer (char *text, Stack *lexems)
                 return nullptr;
             }
 
-            char var[10] = "";
+            char var[MAX_NAME_L] = "";
             int num = 0;
 
             sscanf (cur_smbl, " %[a-zA-Z_1-9]%n", var, &num);
@@ -296,7 +298,7 @@ Lexem **lexer (char *text, Stack *lexems)
                 return nullptr;
             }
 
-            char var[10] = "";
+            char var[MAX_NAME_L] = "";
             int num = 0;
 
             sscanf (cur_smbl, " %[a-zA-Z_1-9]%n", var, &num);
@@ -318,7 +320,7 @@ Lexem **lexer (char *text, Stack *lexems)
                 return nullptr;
             }
 
-            char var[10] = "";
+            char var[MAX_NAME_L] = "";
             int num = 0;
 
             sscanf (cur_smbl, " %[a-zA-Z_1-9]%n", var, &num);
@@ -327,12 +329,7 @@ Lexem **lexer (char *text, Stack *lexems)
             lexem->type = L_NFUN;
             lexem->value.var = (char *)calloc (strlen(var) + 1, sizeof (char));
             strcpy (lexem->value.var, var);
-        }/*
-        else if (strstr (cur_smbl, "DEF") == cur_smbl)
-        {
-            cur_smbl += strlen ("DEF");
-            lexem->type = L_DEF;
-        }*/
+        }
         else if (isalpha (*cur_smbl))
         {
             char var[10] = "";
