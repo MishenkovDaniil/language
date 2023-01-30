@@ -7,14 +7,15 @@
 #include "tree.h"
 #include "output.h"
 #include "stack.h"
+#include "check_input.h"
 
-#include "../../standart_functions/io/io.h"
 
 int main (int argc, const char **argv)
 {
-    if (argc != 4)
+    unsigned int err = 0;
+
+    if (!(check_argc (argc, argv)))
     {
-        fprintf (stderr, "Error: too few arguments.\n");
         return 0;
     }
 
@@ -22,31 +23,19 @@ int main (int argc, const char **argv)
     FILE *tree_file = fopen (argv[2], "w");
     FILE *asm_file  = fopen (argv[3], "w");
 
-    assert (exe_file);
-    assert (tree_file);
-    assert (asm_file);
-
-    int txt_size = get_file_size (argv[1]);
-    int n_lines = 0;
-    int verbose = 1;
-
-    char *text = (char *)calloc (txt_size + 2, sizeof (char));
-    assert (text);
-
-    n_lines = read_in_buf (exe_file, text, &n_lines, txt_size, verbose);
+    if (!(check_files (3, exe_file, argv[1], tree_file, argv[2], asm_file, argv[3])))
+    {
+        return 0;
+    }
 
     Stack lexems = {};
-    stack_init (&lexems, 100);
 
-    lexer (text, &lexems);
-
+    make_lexems (argv[1], exe_file, &lexems);
     print_lexems (&lexems, tree_file);
 
     Tree tree = {};
-    unsigned int err =0;
 
     tree_fill (&tree, &lexems);
-    fprintf (stderr, "root->left [%p]\n", tree.root->left);
     tree_check (&tree, &err);
 
     print_tree (&tree, asm_file);
@@ -54,5 +43,6 @@ int main (int argc, const char **argv)
     stack_dtor (&lexems);
     tree_dtor (&tree);
     //free_lexems (lexems);
-    free (text);
+
+    return 0;
 }

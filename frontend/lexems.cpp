@@ -8,6 +8,8 @@
 #include "input.h"
 #include "stack.h"
 
+#include "../../standart_functions/io/io.h"
+
 void skip_spaces (char **str)
 {
     while (isspace (**str))
@@ -16,10 +18,30 @@ void skip_spaces (char **str)
     }
 }
 
-static const int MAX_NAME_L = 20;
+void make_lexems (const char *filename, FILE *exe_file, Stack *lexems)
+{
+    const int START_LEX_CPCTY = 100;
+
+    int txt_size = get_file_size (filename);
+    int n_lines = 0;
+    int verbose = 1;
+
+    char *text = (char *)calloc (txt_size + 2, sizeof (char));
+    assert (text);
+
+    n_lines = read_in_buf (exe_file, text, &n_lines, txt_size, verbose);
+
+    stack_init (lexems, START_LEX_CPCTY);
+
+    lexer (text, lexems);
+
+    free (text);
+}
 
 Lexem **lexer (char *text, Stack *lexems)
 {
+    const int MAX_NAME_L = 20;
+
     int shift = 0;
     char *cur_smbl = text;
     bool is_needed = true;
