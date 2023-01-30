@@ -13,6 +13,7 @@ do                                                                              
 }while (0)
 
 void skip_spaces (char **str);
+void make_lexems (const char *filename, FILE *exe_file, Stack *lexems);
 Lexem **lexer (char *text, Stack *lexems);
 void print_lexems (Stack *lexems, FILE *output_file);
 Lexem *ltst_meaningful_lxm (Stack *lexems);
