@@ -2,9 +2,7 @@
 
 ## TO DO:
 
-- make NOT
 - processor/cpu/cpu.cpp DELETED string 61 'PUSH (val_2);' which ruins all asm repo programms, but works in language --> solve
-- decide if jmp must pop 2 args or only last one
 - fix frontend/operations.h with '<', '>',...
 - fix "//" comments
 - make config
