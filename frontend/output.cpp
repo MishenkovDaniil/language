@@ -6,7 +6,7 @@
 #include "output.h"
 #include "stack.h"
 #include "input.h"
-
+#include "cctype"
 /// var
 /// index
 /// shift otn RBP
@@ -261,6 +261,7 @@ void print_op (Node *node, FILE *output, Stack *block_names)
 {
     static unsigned int compare_idx = 0;
 
+    const int MAX_OP_LEN = 4;
     const int MAX_COMP_LEN = 8;
     const int MAX_COMP_END_LEN = 12;
 
@@ -269,71 +270,20 @@ void print_op (Node *node, FILE *output, Stack *block_names)
 
     switch (node->value.op_val)
     {
-        case ADD:
-        {
-            fprintf (output, "add\n");
-            break;
+        #define DEF_OP(name,...)            \
+        case name:                          \
+        {                                   \
+            char cmd[MAX_OP_LEN] = "";      \
+            s_tolower (#name, cmd);         \
+                                            \
+            fprintf (output, "%s\n", cmd);  \
+            break;                          \
         }
-        case SUB:
-        {
-            fprintf (output, "sub\n");
-            break;
-        }
-        case MUL:
-        {
-            fprintf (output, "mult\n");
-            break;
-        }
-        case DIV:
-        {
-            fprintf (output, "div\n");
-            break;
-        }
-        case AND:
-        {
-            fprintf (output, "and\n");
-            break;
-        }
-        case OR:
-        {
-            fprintf (output, "or\n");
-            break;
-        }
-        case LT:
-        {
-            fprintf (output, "lt\n");
-            break;
-        }
-        case GT:
-        {
-            fprintf (output, "gt\n");
-            break;
-        }
-        case GEQ:
-        {
-            fprintf (output, "geq\n");
-            break;
-        }
-        case LEQ:
-        {
-            fprintf (output, "leq\n");
-            break;
-        }
-        case EQ:
-        {
-            fprintf (output, "eq\n");
-            break;
-        }
-        case NEQ:
-        {
-            fprintf (output, "neq\n");
-            break;
-        }
-        case NEG:
-        {
-            fprintf (output, "neg\n");
-            break;
-        }
+
+        #include "operations.h"
+
+        #undef DEF_OP
+
         default:
         {
             fprintf (output, "Error: unknown operation");
@@ -647,4 +597,10 @@ void print_var_idx (int index, Stack *block_names, FILE *output, const char *var
     {
         fprintf (output, "\n");
     }
+}
+
+void s_tolower (const char *src, char *dest)
+{
+    while (*dest++ = tolower (*src++))
+        ;
 }

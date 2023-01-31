@@ -49,4 +49,6 @@ void print_while (Node *node, FILE *output, Stack *block_names);
 
 void print_var_idx (int index, Stack *block_names, FILE *output, const char *var);;
 
+void s_tolower (const char *src, char *dest);
+
 #endif /* OUTPUT_H */
