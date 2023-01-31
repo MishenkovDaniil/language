@@ -20,6 +20,7 @@ DEF_OP (NEQ, 11, neq, 2, !=, "", node->left->type == TYPE_OP, "!=", 0, "")
 DEF_OP (AND, 12, and, 2, &&, "", node->left->type == TYPE_OP, "&&", 0, "")
 DEF_OP (OR, 13, or, 2, ||, "", node->left->type == TYPE_OP, "||", 0, "")
 DEF_OP (NEG, 14, neg, 1, -, "", node->left->type == TYPE_OP, "-", 0, "")
+DEF_OP (NOT, 15, not, 1, !, "", node->left->type == TYPE_OP, "!", 0, "")
 
 //DEF_OP (SIN, 6, sin, 3, sin, "\\sin(", 0, "", 0, ")")
 //DEF_OP (COS, 7, cos, 3, cos, "\\cos(", 0, "", 0, ")")
