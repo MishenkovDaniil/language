@@ -57,6 +57,7 @@
 #define AND(left_node, right_node)      tree_create_node (OP, "AND", left_node, right_node)
 #define OR(left_node, right_node)       tree_create_node (OP, "OR",  left_node, right_node)
 #define NEG(left_node, right_node)      tree_create_node (OP, "NEG", left_node, right_node)
+#define NOT(left_node, right_node)      tree_create_node (OP, "NOT", left_node, right_node)
 //#define SIN(node)                       tree_create_node (OP, "SIN", nullptr, node)
 //#define COS(node)                       tree_create_node (OP, "COS", nullptr, node)
 
@@ -636,8 +637,11 @@ Node *GetNodeUnary (Stack *lexems, int *index)
 
     Lexem *cur_lexem = stack_lexem(*index);
 
-    if (!(cur_lexem->type == L_OP &&
-          cur_lexem->value.op_val == NEG))
+    int cond = cur_lexem->type == L_OP &&
+              (cur_lexem->value.op_val == NEG ||
+               cur_lexem->value.op_val == NOT);
+
+    if (!(cond))
     {
         result = GetNodeP (lexems, index);
     }
@@ -645,14 +649,22 @@ Node *GetNodeUnary (Stack *lexems, int *index)
     {
         Node *right_node = nullptr;
 
-        if (cur_lexem->type == L_OP &&
-            cur_lexem->value.op_val == NEG)
+        if (cond)
         {
+            Op_types op = cur_lexem->value.op_val;
+
             (*index)++;
 
             right_node = GetNodeP (lexems, index);
 
-            result = NEG (nullptr, right_node);
+            if (op == NEG)
+            {
+                result = NEG (nullptr, right_node);
+            }
+            else
+            {
+                result = NOT (nullptr, right_node);
+            }
 
             cur_lexem = stack_lexem(*index);
         }

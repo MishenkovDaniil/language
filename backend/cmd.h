@@ -28,7 +28,7 @@ DEF_CMD (ADD,  4, 0, push,
     stack_push (&(STACK), (POP) + (POP));
 })
 
-DEF_CMD (MULT, 5, 0, push,
+DEF_CMD (MUL, 5, 0, push,
 {
     stack_push (&(STACK), (POP) * (POP));
 })
@@ -139,3 +139,8 @@ DEF_CMD (NEG, 29, 0, push,
 {
     stack_push (&(STACK), (POP)*(-1));
 })
+DEF_CMD (NOT, 30, 0, push,
+{
+    stack_push (&(STACK), !(POP));
+})
+

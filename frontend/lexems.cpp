@@ -244,7 +244,8 @@ Lexem **lexer (char *text, Stack *lexems)
                 }
                 else
                 {
-                    break;//must be op NOT
+                    lexem->type = L_OP;
+                    lexem->value.op_val = NOT;
                 }
 
                 break;
