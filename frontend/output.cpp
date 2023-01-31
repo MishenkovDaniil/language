@@ -218,7 +218,11 @@ void print_def (Node *node, FILE *output)
 
 void print_nvar (Node *node, FILE *output, Stack *block_names)
 {
-    add_struct (node->value.var, false, block_names);
+    if (!(add_struct (node->value.var, false, block_names)))
+    {
+        fprintf (stderr, "Syntax error: variable '%s' declared more than once.\n", node->value.var);
+        return;
+    }
     //var_index++;
     print_expr (node->right, output, block_names);
 
