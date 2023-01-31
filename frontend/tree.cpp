@@ -44,7 +44,7 @@ Node *tree_create_node (Type type, const char *value, Node *left, Node *right)
 
             else
             {
-                printf ("Error: wrong value type %d", type);
+                printf ("Error: wrong operation type %s", value);
                 return nullptr;
             }
 
@@ -362,12 +362,13 @@ int make_graph_nodes (Node *node, FILE *tgraph_file)
                         break;
                     }
 
-                    #define DEF_OP(name, num, sign,...)                                                                         \
-                    case name:                                                                                             \
+                    #define DEF_OP(name, num, not_used_1, not_used_2, not_used_3, not_used_4,                                   \
+                                   not_used_5, not_used_6, not_used_7, not_used_8, graphviz_sign)                               \
+                    case name:                                                                                                  \
                     {                                                                                                           \
                         fprintf (tgraph_file, "node_%d [shape = record, style = \"filled\", fillcolor = \"lightblue\","         \
                                             "label = \"{node %p | {parent = %p} | {OP | %s} | {L %p | R %p}} \"];\n\t",         \
-                                            graph_num++, node, node->parent, #sign, node->left, node->right);                   \
+                                            graph_num++, node, node->parent, #graphviz_sign, node->left, node->right);          \
                         break;                                                                                                  \
                     }
 
