@@ -36,7 +36,7 @@ void add_standart (Stack *global, FILE *output)
 {
     assert (global);
 
-    int max_arg_num = 0;
+    //int max_arg_num = 0;
 
 #define var(name, arg_num, code)                            \
     Var *var_##name = create_var (#name, -1);               \
@@ -98,9 +98,9 @@ int find_var (const char *var)
         }
     }
 
-    if (num_of_defs > 1)
+    if (var_index == L_POISON || num_of_defs > 1)
     {
-        printf ("Error: multiple definitions of \"%s\"", var);
+        fprintf (stderr, "Error: multiple definitions of \"%s\"", var);
         return L_POISON;
     }
 
@@ -111,15 +111,27 @@ int find_stk_var (const char *var, Stack *block_names)
 {
     assert (block_names);
 
+    size_t num_of_defs = 0;
+    int var_index = 0;
+
     for (int i = 0; i < block_names->size; i++)
     {
         if (is_my_var (var, i, block_names))
         {
-            return ((Var *)stack_get_token (block_names, i))->index;
+            int founded_idx = ((Var *)stack_get_token (block_names, i))->index;
+            var_index = founded_idx;
+
+            num_of_defs++;
         }
     }
 
-    return 0;
+    if (num_of_defs > 1)
+    {
+        fprintf (stderr, "Error: multiple definitions of \"%s\"", var);
+        return L_POISON;
+    }
+
+    return var_index;
 }
 
 bool is_my_var (const char *var, int index, Stack *block_names)
@@ -128,7 +140,7 @@ bool is_my_var (const char *var, int index, Stack *block_names)
 
     if (cur_var)
     {
-        return strcmp (cur_var->data, var) == 0;
+        return (strcmp (cur_var->data, var) == 0);
     }
 
     return 0;
@@ -318,10 +330,18 @@ void print_call (Node *node, FILE *output, Stack *block_names)
 {
     print_arg (node->right, output, block_names);
 
-    //if (find_var(node->value.var) != 1)
-    //{
-      //  fprintf (stderr, "Error: func '%s' was not inited.\n", node->value.var);
-    //}
+    int func_idx = find_stk_var(node->value.var, global_stk);
+
+    if (func_idx == 0)
+    {
+        fprintf (stderr, "Error: func '%s' was not inited.\n", node->value.var);
+        return;
+    }
+    else if (func_idx == L_POISON)
+    {
+        fprintf (stderr, "Error: func '%s' was multiple inited.\n", node->value.var);
+        return;
+    }
 
     fprintf (output, "push %d\n"
                      "push RAX\n"
