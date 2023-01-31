@@ -22,12 +22,13 @@ static Stack names = {};
 
 static const int L_POISON = 0xDEADBEFF;
 
-Var *create_var (const char *var, const int index)
+Var *create_var (const char *var, const int index, const int par_num)
 {
     Var *struct_var = (Var *)calloc (1, sizeof (Var));
 
     strcpy (struct_var->data, var);
     struct_var->index = index;
+    struct_var->par_num = par_num;
 
     return struct_var;
 }
@@ -38,8 +39,8 @@ void add_standart (Stack *global, FILE *output)
 
     //int max_arg_num = 0;
 
-#define var(name, arg_num, code)                            \
-    Var *var_##name = create_var (#name, -1);               \
+#define var(name, par_num, code)                            \
+    Var *var_##name = create_var (#name, -1, par_num);      \
     stack_push (global, var_##name);                        \
                                                             \
     fprintf (output, #name":\n");                           \
@@ -50,7 +51,7 @@ void add_standart (Stack *global, FILE *output)
     //var_index = max_arg_num;
 }
 
-bool add_struct (const char *var, bool is_label, Stack *block_names)
+Var *add_struct (const char *var, bool is_label, Stack *block_names)
 {
     assert (var);
 
@@ -59,7 +60,7 @@ bool add_struct (const char *var, bool is_label, Stack *block_names)
         block_names = (Stack *)stack_get_token (&names, 0);
     }
 
-    int index = find_var (var);
+    int index = find_var_idx (var);
 
     if (!(index))
     {
@@ -76,25 +77,30 @@ bool add_struct (const char *var, bool is_label, Stack *block_names)
 
         stack_push (block_names, struct_var);
 
-        return true;
+        return struct_var;
     }
 
-    return false;
+    return nullptr;
 }
 
-int find_var (const char *var)
+int find_var_idx (const char *var)
 {
     size_t num_of_defs = 0;
     int var_index = 0;
 
     for (int stack_num = 0; stack_num < names.size; stack_num++)
     {
-        int founded_idx = find_stk_var (var, (Stack *)(stack_get_token (&names, stack_num)));
+        Var *founded_var = find_stk_var (var, (Stack *)(stack_get_token (&names, stack_num)));
 
-        if (founded_idx)
+        if (founded_var)
         {
-            num_of_defs++;
-            var_index = founded_idx;
+            int founded_idx = founded_var->index;
+
+            if (founded_idx)
+            {
+                num_of_defs++;
+                var_index = founded_idx;
+            }
         }
     }
 
@@ -107,19 +113,18 @@ int find_var (const char *var)
     return var_index;
 }
 
-int find_stk_var (const char *var, Stack *block_names)
+Var *find_stk_var (const char *var, Stack *block_names)
 {
     assert (block_names);
 
     size_t num_of_defs = 0;
-    int var_index = 0;
+    Var *struct_var = nullptr;
 
     for (int i = 0; i < block_names->size; i++)
     {
         if (is_my_var (var, i, block_names))
         {
-            int founded_idx = ((Var *)stack_get_token (block_names, i))->index;
-            var_index = founded_idx;
+            struct_var = (Var *)stack_get_token (block_names, i);
 
             num_of_defs++;
         }
@@ -128,10 +133,10 @@ int find_stk_var (const char *var, Stack *block_names)
     if (num_of_defs > 1)
     {
         fprintf (stderr, "Error: multiple definitions of \"%s\"", var);
-        return L_POISON;
+        return nullptr;
     }
 
-    return var_index;
+    return struct_var;
 }
 
 bool is_my_var (const char *var, int index, Stack *block_names)
@@ -310,7 +315,7 @@ void print_op (Node *node, FILE *output, Stack *block_names)
 
 void print_var_val (Node *node, FILE *output, Stack *block_names)
 {
-    int i = find_var (node->value.var);
+    int i = find_var_idx (node->value.var);
 
     if (i == 0)
     {
@@ -332,9 +337,15 @@ void print_var_val (Node *node, FILE *output, Stack *block_names)
 
 void print_call (Node *node, FILE *output, Stack *block_names)
 {
-    print_arg (node->right, output, block_names);
+    Var *func_struct = find_stk_var(node->value.var, global_stk);
 
-    int func_idx = find_stk_var(node->value.var, global_stk);
+    if (!(func_struct))
+    {
+        return;
+    }
+
+    int func_idx = func_struct->index;
+    int par_num = func_struct->par_num;
 
     if (func_idx == 0)
     {
@@ -344,6 +355,14 @@ void print_call (Node *node, FILE *output, Stack *block_names)
     else if (func_idx == L_POISON)
     {
         fprintf (stderr, "Error: func '%s' was multiple inited.\n", node->value.var);
+        return;
+    }
+
+    int arg_num = print_arg (node->right, output, block_names);
+
+    if (par_num != arg_num)
+    {
+        fprintf (stderr, "Error: incorrect number of arguments in func %s (%d instead of %d).\n", node->value.var, arg_num, par_num);
         return;
     }
 
@@ -358,26 +377,30 @@ void print_call (Node *node, FILE *output, Stack *block_names)
                      "pop RAX\n", char_index - 1, node->value.var, char_index - 1);
 }
 
-void print_arg (Node *node, FILE *output, Stack *block_names)
+int print_arg (Node *node, FILE *output, Stack *block_names)
 {
+    int arg_num = 1;
+
     if (!(node))
     {
-        return;
+        return 0;
     }
 
     if (node->left)
     {
         print_expr (node->left, output, block_names);
     }
-    if (node->right)
-    {
-        print_arg (node->right, output, block_names);
-    }
+
+    arg_num += print_arg (node->right, output, block_names);
+
+    return arg_num;
 }
 
 void print_func (Node *node, FILE *output)
 {
-    if (!(add_struct (node->value.var, true)))
+    Var *func_struct = add_struct (node->value.var, true);
+
+    if (!(func_struct))
     {
         //error
         fprintf (stderr, "Syntax error: function '%s' declared more than once.\n", node->value.var);
@@ -391,9 +414,11 @@ void print_func (Node *node, FILE *output)
 
     stack_push (&names, &func);
 
-    if (node->left)
+    func_struct->par_num = print_par (node->left, output, &func);
+
+    if (func_struct->par_num == L_POISON)
     {
-        print_par (node->left, output, &func);
+        return;
     }
 
     if (!(node->right))
@@ -408,24 +433,29 @@ void print_func (Node *node, FILE *output)
     stack_dtor (&func);
 }
 
-void print_par (Node *node, FILE *output, Stack *block_names)
+int print_par (Node *node, FILE *output, Stack *block_names)
 {
+    int par_num = 1;
+
     if (!(node))
     {
-        return;
+        return 0;
     }
 
     if (!(add_struct (node->value.var, false, block_names)))
     {
-        return;
+        fprintf (stderr, "Syntax error: variable %s multiple declared", node->value.var);
+        return L_POISON;
     }
 
     int i = char_index - 1;
 
-    print_par (node->right, output, block_names);
+    par_num += print_par (node->right, output, block_names);
 //    int i = find_var (node->value.var);//?? works??
 
     fprintf (output, "pop [%d + RAX] /*%s*/\n", i, node->value.var);//i?
+
+    return par_num;
 }
 
 void print_block (Node *node, FILE *output, Stack *block_names)
@@ -442,7 +472,7 @@ void print_block (Node *node, FILE *output, Stack *block_names)
 
 void print_var (Node *node, FILE *output, Stack *block_names)
 {
-    int i = find_var (node->value.var);
+    int i = find_var_idx (node->value.var);
 
     if (i == 0)
     {
@@ -527,7 +557,7 @@ void print_ass (Node *node, FILE *output, Stack *block_names)
         return;
     }
 
-    int i = find_var (node->left->value.var);
+    int i = find_var_idx (node->left->value.var);
 
     if (i == 0)
     {

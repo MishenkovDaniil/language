@@ -8,15 +8,16 @@ struct Var
 {
     int index = 0;
     char data[20] = "";
+    int par_num = 0;
 };
 
-Var *create_var (const char *var, const int index);
+Var *create_var (const char *var, const int index, const int par_num = 0);
 
 void add_standart (Stack *global, FILE *output);
 
-bool add_struct   (const char *var, bool is_label, Stack *block_names = nullptr);
-int  find_var     (const char *var);
-int  find_stk_var (const char *var, Stack *block_names);
+Var *add_struct   (const char *var, bool is_label, Stack *block_names = nullptr);
+int  find_var_idx (const char *var);
+Var *find_stk_var (const char *var, Stack *block_names);
 bool is_my_var    (const char *var, int index, Stack *block_names);
 
 void print_tree    (Tree *tree, FILE *output);
@@ -27,8 +28,8 @@ void print_def     (Node *node, FILE *output);
 void print_nvar    (Node *node, FILE *output, Stack *block_names = nullptr);
 void print_func    (Node *node, FILE *output);
 
-void print_par     (Node *node, FILE *output, Stack *block_names);
-void print_arg     (Node *node, FILE *output, Stack *block_names);
+int print_par     (Node *node, FILE *output, Stack *block_names);
+int print_arg     (Node *node, FILE *output, Stack *block_names);
 
 void print_block   (Node *node, FILE *output, Stack *block_names);
 void print_seq     (Node *node, FILE *output, Stack *block_names);
