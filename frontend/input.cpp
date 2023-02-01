@@ -495,7 +495,7 @@ Node *GetNodeE (Stack *lexems, int *index)
 
 Node *GetNodeComp (Stack *lexems, int *index)
 {
-     Node *result = GetNodeF (lexems, index);
+    Node *result = GetNodeF (lexems, index);
     Node *right_node = nullptr;
 
     Lexem *cur_lexem = stack_lexem(*index);
@@ -637,37 +637,39 @@ Node *GetNodeUnary (Stack *lexems, int *index)
 
     Lexem *cur_lexem = stack_lexem(*index);
 
-    int cond = cur_lexem->type == L_OP &&
-              (cur_lexem->value.op_val == NEG ||
-               cur_lexem->value.op_val == NOT);
+    bool is_unary = false;
 
-    if (!(cond))
+    while (cur_lexem->type == L_OP &&
+          (cur_lexem->value.op_val == NEG ||
+           cur_lexem->value.op_val == NOT))
+    {
+
+        Op_types op = cur_lexem->value.op_val;
+
+        (*index)++;
+
+        if (!(is_unary))
+        {
+            result = GetNodeP (lexems, index);
+        }
+
+        is_unary = true;
+
+        if (op == NEG)
+        {
+            result = NEG (nullptr, result);
+        }
+        else
+        {
+            result = NOT (nullptr, result);
+        }
+
+        cur_lexem = stack_lexem(*index);
+    }
+
+    if (!(is_unary))
     {
         result = GetNodeP (lexems, index);
-    }
-    else
-    {
-        Node *right_node = nullptr;
-
-        if (cond)
-        {
-            Op_types op = cur_lexem->value.op_val;
-
-            (*index)++;
-
-            right_node = GetNodeP (lexems, index);
-
-            if (op == NEG)
-            {
-                result = NEG (nullptr, right_node);
-            }
-            else
-            {
-                result = NOT (nullptr, right_node);
-            }
-
-            cur_lexem = stack_lexem(*index);
-        }
     }
 
     return result;
@@ -682,7 +684,6 @@ Node *GetNodeP (Stack *lexems, int *index)
     if (cur_lexem->type == L_STARTING_BRACKET)
     {
         (*index)++;
-
         result = GetNodeE (lexems, index);
 
         if (!(stack_lexem(*index)->type == L_CLOSING_BRACKET))
@@ -710,11 +711,11 @@ Node *GetNodeP (Stack *lexems, int *index)
 
         if (debug_lexem->type == L_OP)
         {
-            debug_print (", op type is {%d}.\n", debug_lexem->value.op_val);
+            debug_print (", op type is {%d}, index is %d.\n", debug_lexem->value.op_val, *index);
         }
         else
         {
-            debug_print (".\n");
+            debug_print ("index is %d.\n", *index);
         }
 
         return nullptr;
@@ -743,11 +744,11 @@ Node *GetNodeN (Stack *lexems, int *index)
 
         if (cur_lexem->type == L_OP)
         {
-            debug_print (", op type is {%d}.\n", cur_lexem->value.op_val);
+            debug_print (", op type is {%d}, index is %d.\n", cur_lexem->value.op_val, *index);
         }
         else
         {
-            debug_print (".\n");
+            debug_print ("index is %d.\n", *index);
         }
     }
 
