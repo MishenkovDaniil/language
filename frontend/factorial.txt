@@ -1,31 +1,29 @@
-NVAR global = 5;
-
-NFUNC factorial(x)
+ситуация factorial(x)
 {
-    NVAR res = x;
+    ну-ка res = x;
 
-    if (x < 0)
+    проверим (x < 0)
     {
-        return 0;
+        отзови 0;
     }
-    if (x == 1 || x == 0)
+    проверим (x == 1 || x == 0)
     {
-        return 1;
+        отзови 1;
     }
-    if (x > 1)
+    проверим (x > 1)
     {
-        res = res*CALL factorial (x - 1);
+        res = res * позови factorial (x - 1);
     }
 
-    return res;
+    отзови res;
 }
 
-NFUNC main ()
+ситуация main ()
 {
-    NVAR a2 = CALL read();
+    ну-ка a2 = позови read();
 
-    a2 = CALL factorial (a2);
-    CALL print (a2);
+    a2 = позови factorial (a2);
+    позови print (a2);
 
-    return 0;
+    отзови 0;
 }
