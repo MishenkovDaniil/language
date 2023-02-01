@@ -158,7 +158,7 @@ Lexem **lexer (char *text, Stack *lexems)
                 {
                     lexem->value.op_val = NEG;
                 }
-                else if (prev_lexem->type == L_OP || prev_lexem->type == L_NVAR || prev_lexem->type == L_ASS)
+                else if (prev_lexem->type == L_OP || prev_lexem->type == L_NVAR || prev_lexem->type == L_ASS || prev_lexem->type == L_CALL)
                 {
                     lexem->value.op_val = NEG;
                 }
@@ -272,19 +272,19 @@ Lexem **lexer (char *text, Stack *lexems)
 
             cur_smbl = end;
         }
-        else if (strstr (cur_smbl, "if") == cur_smbl)
+        else if (strstr (cur_smbl, "проверим") == cur_smbl)
         {
-            cur_smbl += strlen ("if");
+            cur_smbl += strlen ("проверим");
             lexem->type = L_IF;
         }
-        else if (strstr (cur_smbl, "while") == cur_smbl)
+        else if (strstr (cur_smbl, "крутим") == cur_smbl)
         {
-            cur_smbl += strlen ("while");
+            cur_smbl += strlen ("крутим");
             lexem->type = L_WHILE;
         }
-        else if (strstr (cur_smbl, "CALL") == cur_smbl)
+        else if (strstr (cur_smbl, "позови") == cur_smbl)
         {
-            cur_smbl += strlen ("call");
+            cur_smbl += strlen ("позови");
 
             skip_spaces (&cur_smbl);
 
@@ -304,14 +304,14 @@ Lexem **lexer (char *text, Stack *lexems)
             lexem->value.var = (char *)calloc (strlen(var) + 1, sizeof (char));
             strcpy (lexem->value.var, var);
         }
-        else if (strstr (cur_smbl, "return") == cur_smbl)
+        else if (strstr (cur_smbl, "отзови") == cur_smbl)
         {
-            cur_smbl += strlen ("return");
+            cur_smbl += strlen ("отзови");
             lexem->type = L_RET;
         }
-        else if (strstr (cur_smbl, "NVAR") == cur_smbl)
+        else if (strstr (cur_smbl, "ну-ка") == cur_smbl)
         {
-            cur_smbl += strlen ("NVAR") + 1;
+            cur_smbl += strlen ("ну-ка") + 1;
 
             skip_spaces (&cur_smbl);
 
@@ -331,9 +331,9 @@ Lexem **lexer (char *text, Stack *lexems)
             lexem->value.var = (char *)calloc (strlen(var) + 1, sizeof (char));
             strcpy (lexem->value.var, var);
         }
-        else if (strstr (cur_smbl, "NFUNC") == cur_smbl)
+        else if (strstr (cur_smbl, "ситуация") == cur_smbl)
         {
-            cur_smbl += strlen ("NFUNC") + 1;
+            cur_smbl += strlen ("ситуация") + 1;
 
             skip_spaces (&cur_smbl);
 
